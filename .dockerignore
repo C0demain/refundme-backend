@@ -1,0 +1,31 @@
+# Ignorar node_modules e dependências locais
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Ignorar arquivos de build locais
+dist
+build
+
+# Ignorar arquivos de configuração do ambiente
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Ignorar logs e arquivos temporários
+logs
+*.log
+tmp
+.cache
+.DS_Store
+
+# Ignorar arquivos do editor de código
+.vscode
+.idea
+*.swp
+*.swo
+
+# Ignorar Docker Compose override (caso exista)
+docker-compose.override.yml
