@@ -4,20 +4,21 @@ import { AuthController } from './auth.controller';
 import { UserModule } from 'src/user/user.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import {config} from 'dotenv'
 
+config() // load env vars
 @Module({
   imports: [
     UserModule,
     PassportModule.register({defaultStrategy: 'jwt'}),
     JwtModule.register({
-      secret: 'secret',
+      secret: process.env.JWT_SECRET,
       signOptions:{
-        expiresIn: '1h'
+        expiresIn: '1d'
       }
     })
   ],
   providers: [AuthService],
   controllers: [AuthController],
-  exports: [JwtModule, PassportModule]
 })
 export class AuthModule {}
