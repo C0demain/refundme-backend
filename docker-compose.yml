@@ -1,0 +1,56 @@
+services:
+  backend:
+    build: .
+    container_name: backend_app
+    depends_on:
+      - postgres
+      - mongodb
+    env_file:
+      - .env.docker
+    ports:
+      - "3000:3000"
+    networks:
+      - app_network
+    volumes:
+      - .:/usr/src/app:cached
+      - /usr/src/app/node_modules
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    env_file:
+      - .env.docker
+    environment:
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5432:5432"
+    networks:
+      - app_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:6
+    container_name: mongodb_db
+    env_file:
+      - .env.docker
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongouser
+      MONGO_INITDB_ROOT_PASSWORD: mongopassword
+      MONGO_INITDB_DATABASE: mydatabase
+    ports:
+      - "27017:27017"
+    networks:
+      - app_network
+    volumes:
+      - mongodb_data:/data/db
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongodb_data:
