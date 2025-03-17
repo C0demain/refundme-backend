@@ -3,18 +3,31 @@ import { CreateExpenseDto } from './dtos/createExpense.dto';
 import { UpdateExpenseDto } from './dtos/updateExpense.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Expense } from './expense.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+import { User } from 'src/user/user.schema';
 
 @Injectable()
 export class ExpenseService {
   constructor(
     @InjectModel(Expense.name) private expenseModel: Model<Expense>,
+    @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
-  async createExpense(createExpenseDto: CreateExpenseDto) {
+  async createExpense(createExpenseDto: CreateExpenseDto, file: Express.Multer.File) {
     try {
-      return this.expenseModel.create(createExpenseDto);
+      const expense = new this.expenseModel({
+        ...createExpenseDto,
+        image: file.buffer,
+      });
+      await expense.save();
+  
+      await this.userModel.findByIdAndUpdate(createExpenseDto.userId, {
+        $push: { expenses: expense._id },
+      });
+  
+      return expense;
     } catch (error) {
+      console.log(error)
       throw new Error('Expense not created');
     }
   }

@@ -19,9 +19,13 @@ export class UserService{
     async getUsers(){
         return this.userModel.find().exec();
     }
+
+    async getUsersWithExpenses(){
+        return this.userModel.find().populate('expenses').exec();
+    }
     
     async getUserById(id: string){
-        return this.userModel.findById(id).exec();
+        return this.userModel.findById(id).populate('expenses').exec();
     }
 
     async getUserByEmail(email: string){
@@ -32,7 +36,7 @@ export class UserService{
         return this.userModel.findByIdAndUpdate(id, updateUser,{new: true}).exec();
     }
 
-    deleteUser(id: string) {
+    async deleteUser(id: string) {
         return this.userModel.findByIdAndDelete(id).exec();
     }
 }

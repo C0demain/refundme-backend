@@ -6,20 +6,24 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { ExpenseService } from './expense.service';
 import { CreateExpenseDto } from './dtos/createExpense.dto';
 import { UpdateExpenseDto } from './dtos/updateExpense.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('expenses')
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
-  async create(@Body() createExpenseDto: CreateExpenseDto) {
+  @UseInterceptors(FileInterceptor('image'))
+  async create(@Body()createExpenseDto: CreateExpenseDto, @UploadedFile() file: Express.Multer.File) {
     return {
       message: 'Expense created successfully',
-      data: await this.expenseService.createExpense(createExpenseDto),
+      data: await this.expenseService.createExpense(createExpenseDto,file),
     };
   }
 
