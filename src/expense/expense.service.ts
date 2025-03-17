@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateExpenseDto } from './dtos/createExpense.dto';
 import { UpdateExpenseDto } from './dtos/updateExpense.dto';
-import { InjectModel } from '@nestjs/mongoose';
 import { Expense } from './expense.schema';
-import { Model } from 'mongoose';
 
 @Injectable()
 export class ExpenseService {
@@ -12,40 +16,42 @@ export class ExpenseService {
   ) {}
 
   async createExpense(createExpenseDto: CreateExpenseDto) {
-    try {
-      return this.expenseModel.create(createExpenseDto);
-    } catch (error) {
-      throw new Error('Expense not created');
-    }
+    return this.expenseModel.create(createExpenseDto);
   }
 
   async getExpenses() {
-    try {
-      return this.expenseModel.find().exec();
-    } catch (error) {
-      throw new Error('Expenses not found');
-    }
+    return this.expenseModel.find().exec();
   }
 
   async getExpenseById(id: string) {
-    try {
-      return this.expenseModel.findById(id).exec();
-    } catch (error) {
-      throw new Error('Expense not found');
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('ID inválido');
     }
+    const expense = await this.expenseModel.findById(id).exec();
+    if (!expense) {
+      throw new NotFoundException(`Despesa com id ${id} não encontrada`);
+    }
+    return expense;
   }
 
   async updateExpense(id: string, updateExpense: UpdateExpenseDto) {
-    try {
-      return this.expenseModel
-        .findByIdAndUpdate(id, updateExpense, { new: true })
-        .exec();
-    } catch (error) {
-      throw new Error('Expense not updated');
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('ID inválido');
     }
+    const expense = await this.expenseModel
+      .findByIdAndUpdate(id, updateExpense, { new: true })
+      .exec();
+
+    if (!expense) {
+      throw new NotFoundException(`Despesa com id ${id} não encontrada`); 
+    }
+    return expense;
   }
 
   async deleteExpense(id: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('ID inválido');
+    }
     return this.expenseModel.findByIdAndDelete(id).exec();
   }
 }

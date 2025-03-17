@@ -1,15 +1,15 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { ExpenseService } from './expense.service';
 import { CreateExpenseDto } from './dtos/createExpense.dto';
 import { UpdateExpenseDto } from './dtos/updateExpense.dto';
+import { ExpenseService } from './expense.service';
 
 @Controller('expenses')
 export class ExpenseController {
@@ -54,7 +54,6 @@ export class ExpenseController {
   async remove(@Param('id') id: string) {
     return {
       message: 'Expense deleted successfully',
-      data: await this.expenseService.deleteExpense(id),
     };
   }
 }
