@@ -5,7 +5,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), MongooseModule.forRoot(process.env.MONGODB_URI_ATLAS || ""), UserModule],
+  imports: [ConfigModule.forRoot(), MongooseModule.forRoot(process.env.MONGODB_URI_ATLAS || ""), UserModule, AuthModule],
   controllers: [],
   providers: [],
 })
