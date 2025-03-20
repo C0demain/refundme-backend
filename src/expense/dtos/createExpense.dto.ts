@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsDate,
   IsDateString,
@@ -10,7 +11,12 @@ import {
 export class CreateExpenseDto {
   @IsNumber()
   @IsNotEmpty()
+  @Transform(({ value }) => parseFloat(value))
   value: number;
+
+  @IsString()
+  @IsNotEmpty()
+  userId:string
 
   @IsString()
   @IsNotEmpty()
@@ -22,5 +28,9 @@ export class CreateExpenseDto {
 
   @IsString()
   @IsOptional()
-  description: string;
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  image?:string;
 }
