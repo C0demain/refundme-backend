@@ -88,7 +88,6 @@ export class ExpenseService {
 
   async deleteExpense(id: string) {
     try {
-      // Buscar a despesa para obter a URL da imagem e o userId associado
       const expense = await this.expenseModel.findById(id);
       if (!expense) {
         throw new Error('Expense not found');
@@ -96,7 +95,7 @@ export class ExpenseService {
   
       // Se a despesa tiver uma imagem, deletá-la do Supabase
       if (expense.image) {
-        const filePath = expense.image.split(`${process.env.SUPABASE_BUCKET}/`)[1]; // Extrai o caminho do arquivo
+        const filePath = expense.image.split(`${process.env.SUPABASE_BUCKET}/`)[1];
         const { error } = await this.supabase.storage
           .from(process.env.SUPABASE_BUCKET || "")
           .remove([filePath]);
