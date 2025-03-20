@@ -87,6 +87,39 @@ export class ExpenseService {
   }
 
   async deleteExpense(id: string) {
-    return this.expenseModel.findByIdAndDelete(id).exec();
+    try {
+      // Buscar a despesa para obter a URL da imagem e o userId associado
+      const expense = await this.expenseModel.findById(id);
+      if (!expense) {
+        throw new Error('Expense not found');
+      }
+  
+      // Se a despesa tiver uma imagem, deletá-la do Supabase
+      if (expense.image) {
+        const filePath = expense.image.split(`${process.env.SUPABASE_BUCKET}/`)[1]; // Extrai o caminho do arquivo
+        const { error } = await this.supabase.storage
+          .from(process.env.SUPABASE_BUCKET || "")
+          .remove([filePath]);
+  
+        if (error) {
+          console.warn('Erro ao deletar imagem do Supabase:', error.message);
+        }
+      }
+  
+      // Remover a referência da despesa do usuário
+      await this.userModel.updateMany(
+        { expenses: id },
+        { $pull: { expenses: id } }
+      );
+  
+      // Deletar a despesa do banco
+      await this.expenseModel.findByIdAndDelete(id);
+  
+      return { message: 'Expense deleted successfully' };
+    } catch (error) {
+      console.error('Erro ao deletar despesa:', error);
+      throw new Error('Expense not deleted');
+    }
   }
+  
 }
