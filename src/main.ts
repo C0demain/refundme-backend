@@ -11,8 +11,6 @@ async function bootstrap() {
     .setTitle("Refundme API")
     .setDescription("refundme backend documentation")
     .setVersion("1.0")
-    .addTag("expenses")
-    .addTag("users")
     .addServer("http://localhost:3000", "Development Server")
     .addBearerAuth()
     .setLicense("MIT License", "https://opensource.org/licenses/MIT")
