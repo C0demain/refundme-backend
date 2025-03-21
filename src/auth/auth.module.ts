@@ -5,6 +5,7 @@ import { UserModule } from 'src/user/user.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import {config} from 'dotenv'
+import { JwtStrategy } from './jwt.strategy';
 
 config() // load env vars
 @Module({
@@ -18,7 +19,7 @@ config() // load env vars
       }
     })
   ],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
 })
 export class AuthModule {}
