@@ -6,13 +6,15 @@ import {
     HttpException, 
     Param, 
     Patch, 
-    Post 
+    Post, 
+    UseGuards
   } from "@nestjs/common";
   import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
   import { UserService } from "./user.service";
   import mongoose from "mongoose";
   import { CreateUserDto } from "./dtos/createUser.dto";
   import { UpdateUserDto } from "./dtos/updateUser.dto";
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
   
   @ApiTags('Users')
   @Controller('users')
@@ -28,6 +30,7 @@ import {
     }
   
     @Get()
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Retrieve all users' })
     @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
     async getUsers() {

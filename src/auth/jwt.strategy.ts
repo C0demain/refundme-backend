@@ -14,8 +14,8 @@ export class JwtStrategy extends PassportStrategy(Strategy){
             ignoreExpiration: false
         })
     }
-    async validate(email: string, password: string) {
-        return await this.authService.validateUser(email, password)
+    async validate(payload: any) {
+        return { user_id: payload.id, email: payload.email }; // Retorna apenas os dados necessários
     }
     
 }
