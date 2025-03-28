@@ -36,7 +36,14 @@ export class UserController {
   async getUsers() {
     return this.userService.getUsers();
   }
-
+  
+  @Get('/with-expenses')
+  @ApiOperation({ summary: 'Retrieve all users with their expenses' })
+  @ApiResponse({ status: 200, description: 'Users with expenses retrieved successfully' })
+  async getUsersWithExpenses() {
+    return this.userService.getUsersWithExpenses();
+  }
+  
   @Get(':id')
   @ApiOperation({ summary: 'Retrieve a user by ID' })
   @ApiParam({ name: 'id', required: true, description: 'User ID' })
@@ -48,6 +55,7 @@ export class UserController {
     if (!findUser) throw new HttpException('User not found', 404);
     return findUser;
   }
+
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a user by ID' })

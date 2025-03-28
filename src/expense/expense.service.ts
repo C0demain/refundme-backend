@@ -21,8 +21,9 @@ export class ExpenseService {
 
   async createExpense(createExpenseDto: CreateExpenseDto, file: Express.Multer.File) {
     try {
+      let imageUrl = null;
   
-      // Faz o upload apenas se um arquivo foi enviado
+      // Faz o upload da imagem se um arquivo foi enviado
       if (file) {
         const { data, error } = await this.supabase
           .storage
@@ -32,22 +33,23 @@ export class ExpenseService {
           });
   
         if (error) throw error;
+  
         // Obtém a URL pública do arquivo salvo no Supabase
-        var imageUrl = this.supabase.storage
+        imageUrl = this.supabase.storage
           .from(process.env.SUPABASE_BUCKET || "")
-          .getPublicUrl(data.path);
-
+          .getPublicUrl(data.path).data.publicUrl;
       }
-      
-      // Criar a despesa e salvar no MongoDB
+  
+      // Criar a despesa e salvar no MongoDB com a referência ao usuário
       const expense = new this.expenseModel({
         ...createExpenseDto,
-        image: imageUrl.data.publicUrl,
+        image: imageUrl,
+        user: createExpenseDto.userId, // Associando corretamente o usuário
       });
   
       await expense.save();
   
-      // Associar a despesa ao usuário
+      // Associar a despesa ao usuário no array "expenses"
       await this.userModel.findByIdAndUpdate(createExpenseDto.userId, {
         $push: { expenses: expense._id },
       });
@@ -59,10 +61,14 @@ export class ExpenseService {
     }
   }
   
+  
 
   async getExpenses() {
     try {
-      return this.expenseModel.find().exec();
+      return this.expenseModel
+        .find()
+        .populate('user', 'id name')
+        .exec();
     } catch (error) {
       throw new Error('Expenses not found');
     }
