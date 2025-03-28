@@ -12,6 +12,7 @@ async function bootstrap() {
     .setDescription("refundme backend documentation")
     .setVersion("1.0")
     .addServer("http://localhost:3000", "Development Server")
+    .addServer("http://api-5semestre.ddns.net:3000", "Production Server")
     .addBearerAuth()
     .setLicense("MIT License", "https://opensource.org/licenses/MIT")
     .build();
