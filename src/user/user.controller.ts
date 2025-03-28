@@ -9,7 +9,7 @@ import {
   Post,
   UseGuards
 } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UserService } from "./user.service";
 import mongoose from "mongoose";
 import { CreateUserDto } from "./dtos/createUser.dto";
@@ -18,6 +18,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 
 @UseGuards(JwtAuthGuard)
 @ApiTags('Users')
+@ApiBearerAuth()
 @Controller('users')
 export class UserController {
   constructor(private userService: UserService) { }

@@ -10,7 +10,7 @@ import {
   UploadedFile,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiConsumes, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiConsumes, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { ExpenseService } from './expense.service';
 import { CreateExpenseDto } from './dtos/createExpense.dto';
 import { UpdateExpenseDto } from './dtos/updateExpense.dto';
@@ -27,6 +27,7 @@ export class ExpenseController {
   @Post()
   @ApiOperation({ summary: 'Create an expense with optional image upload' })
   @ApiConsumes('multipart/form-data')
+  @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('image'))
   @ApiBody({
     schema: {
