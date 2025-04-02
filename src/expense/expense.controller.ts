@@ -19,8 +19,9 @@ import { Express } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/auth/decorators/role.decorator';
 import { Role } from 'src/user/enums/role.enum';
+import { RolesGuard } from 'src/auth/guards/role.guard';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('Expenses')
 @ApiBearerAuth()
 @Controller('expenses')
