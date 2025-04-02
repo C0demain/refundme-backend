@@ -22,7 +22,7 @@ export class CreateExpenseDto {
 
   @ApiProperty({ example: 'Food', description: 'Type of the expense' })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty()   
   type: string;
 
   @ApiPropertyOptional({ example: '2023-05-20T14:48:00.000Z', description: 'Date of the expense' })
