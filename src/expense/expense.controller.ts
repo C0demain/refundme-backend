@@ -20,6 +20,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
 @ApiTags('Expenses')
+@ApiBearerAuth()
 @Controller('expenses')
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
@@ -27,7 +28,6 @@ export class ExpenseController {
   @Post()
   @ApiOperation({ summary: 'Create an expense with optional image upload' })
   @ApiConsumes('multipart/form-data')
-  @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('image'))
   @ApiBody({
     schema: {
