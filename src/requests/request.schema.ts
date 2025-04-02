@@ -19,6 +19,9 @@ export class Request {
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Expense' }] })
   expenses: Types.ObjectId[];
+
+  @Prop()
+  isOverLimit: boolean;
 }
 
 export const RequestSchema = SchemaFactory.createForClass(Request);
