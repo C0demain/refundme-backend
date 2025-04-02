@@ -14,4 +14,19 @@ export class CreateProjectDto {
   @IsString()
   @IsOptional()
   description: string;
+
+  @ApiProperty({
+    example: 'CC-0001',
+    description: 'Cost center of the project',
+  })
+  @IsString()
+  @IsOptional()
+  cc: string;
+
+  @ApiProperty({
+    example: 1000,
+    description: 'Limit of the project',
+  })
+  @IsNotEmpty()
+  limit: number;
 }

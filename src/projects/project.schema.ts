@@ -16,6 +16,9 @@ export class Project {
   @Prop()
   cc: string;
 
+  @Prop({ required: true })
+  limit: number;
+
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Request' }] })
   requests: Types.ObjectId[];
 }
