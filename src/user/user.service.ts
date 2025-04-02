@@ -4,11 +4,12 @@ import { Model } from "mongoose";
 import { User } from "./user.schema";
 import { CreateUserDto } from "./dtos/createUser.dto";
 import { UpdateUserDto } from "./dtos/updateUser.dto";
+import { ExpenseService } from "src/expense/expense.service";
 
 
 @Injectable()
 export class UserService{
-    constructor(@InjectModel(User.name) private userModel: Model<User>){}
+    constructor(@InjectModel(User.name) private userModel: Model<User>, private readonly expenseService:ExpenseService){}
     
     async createUser(createUserDto: CreateUserDto){
         const newUser = new this.userModel(createUserDto);
@@ -21,7 +22,15 @@ export class UserService{
     }
 
     async getUsersWithExpenses(){
-        return this.userModel.find().populate('expenses').exec();
+        const users = await this.userModel.find().populate('expenses').lean().exec();
+
+        return Promise.all(users.map(async user => ({
+            ...user,
+            expenses: await Promise.all(user.expenses.map(async (expense: any) => ({
+                ...expense,
+                image: expense.image ? await this.expenseService.getSignedImageUrl(expense.image) : null,
+            }))),
+        })));
     }
     
     async getUserById(id: string){
