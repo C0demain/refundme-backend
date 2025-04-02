@@ -1,0 +1,29 @@
+name: Push image to DockerHub by sprint
+on:
+  push:
+    tags:
+      - sprint-*
+
+jobs:
+    buildNest:
+      uses: C0demain/refundme-backend/.github/workflows/build.yml@dev
+    build:
+      name: push docker image to docker hub
+      needs: [buildNest]
+      runs-on: ubuntu-latest
+      steps:
+        - name: check repository
+          uses: actions/checkout@v4
+
+        - name: login to docker hub
+          uses: docker/login-action@v3
+          with:
+            username: ${{secrets.DOCKERHUB_USERNAME}}
+            password: ${{secrets.DOCKERHUB_TOKEN}}
+          
+        - name: build and push docker image to registry
+          uses: docker/build-push-action@v5
+          with:
+            context: .
+            push: true
+            tags: ${{secrets.DOCKERHUB_USERNAME}}/refundme-api:${{github.ref_name}}
