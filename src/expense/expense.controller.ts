@@ -17,6 +17,8 @@ import { UpdateExpenseDto } from './dtos/updateExpense.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Roles } from 'src/auth/decorators/role.decorator';
+import { Role } from 'src/user/enums/role.enum';
 
 @UseGuards(JwtAuthGuard)
 @ApiTags('Expenses')
@@ -76,6 +78,7 @@ export class ExpenseController {
   }
 
   @Patch(':id')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update an expense by ID' })
   @ApiParam({ name: 'id', required: true, description: 'Expense ID' })
   @ApiResponse({ status: 200, description: 'Expense updated successfully' })
@@ -92,6 +95,7 @@ export class ExpenseController {
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete an expense by ID' })
   @ApiParam({ name: 'id', required: true, description: 'Expense ID' })
   @ApiResponse({ status: 200, description: 'Expense deleted successfully' })
