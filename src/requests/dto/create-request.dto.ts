@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import { StatusEnum } from 'src/utils/enums/status.enum';
 
 export class CreateRequestDto {
   @ApiProperty({ example: 'Project 1', description: 'Name of the project' })
@@ -14,4 +15,12 @@ export class CreateRequestDto {
   @IsString()
   @IsNotEmpty()
   projectId: string;
+
+  @ApiProperty({
+    example: 'Pendente',
+    description: 'Status of the request',
+  })
+  @IsOptional()
+  @IsEnum(StatusEnum)
+  status: StatusEnum;
 }
