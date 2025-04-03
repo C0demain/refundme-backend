@@ -13,8 +13,10 @@ import { UpdateRequestDto } from './dto/update-request.dto';
 import { RequestsService } from './requests.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth()
 @Controller('requests')
 export class RequestsController {
   constructor(private readonly requestsService: RequestsService) {}
