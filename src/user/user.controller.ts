@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
@@ -18,6 +19,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { Roles } from "src/auth/decorators/role.decorator";
 import { Role } from "./enums/role.enum";
 import { RolesGuard } from "src/auth/guards/role.guard";
+import { UserFiltersDto } from "src/user/dtos/user-filters.dto";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
@@ -38,15 +40,15 @@ export class UserController {
   @Get()
   @ApiOperation({ summary: 'Retrieve all users' })
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
-  async getUsers() {
-    return this.userService.getUsers();
+  async getUsers(@Query() filters: UserFiltersDto) {
+    return this.userService.getUsers(filters);
   }
   
   @Get('/with-expenses')
   @ApiOperation({ summary: 'Retrieve all users with their expenses' })
   @ApiResponse({ status: 200, description: 'Users with expenses retrieved successfully' })
-  async getUsersWithExpenses() {
-    return this.userService.getUsersWithExpenses();
+  async getUsersWithExpenses(@Query() filters: UserFiltersDto) {
+    return this.userService.getUsersWithExpenses(filters);
   }
   
   @Get(':id')

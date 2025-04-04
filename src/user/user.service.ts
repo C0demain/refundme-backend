@@ -5,6 +5,8 @@ import { User } from "./user.schema";
 import { CreateUserDto } from "./dtos/createUser.dto";
 import { UpdateUserDto } from "./dtos/updateUser.dto";
 import { ExpenseService } from "src/expense/expense.service";
+import { UserFiltersDto } from "src/user/dtos/user-filters.dto";
+import parseSearch from "src/utils/parseSearch";
 
 
 @Injectable()
@@ -17,12 +19,18 @@ export class UserService{
         return newUser.save()
     }
 
-    async getUsers(){
-        return this.userModel.find().exec();
+    async getUsers(queryFilters: UserFiltersDto){
+        const {search, ...filters} = queryFilters
+        const searchParams = parseSearch(search, ['name', 'email'])
+        
+        return this.userModel.find( {...filters, ...searchParams} ).exec();
     }
 
-    async getUsersWithExpenses(){
-        const users = await this.userModel.find().populate('expenses').lean().exec();
+    async getUsersWithExpenses(queryFilters: UserFiltersDto){
+        const {search, ...filters} = queryFilters
+        const searchParams = parseSearch(search, ['name', 'email'])
+
+        const users = await this.userModel.find( {...filters, ...searchParams} ).populate('expenses').lean().exec();
 
         return Promise.all(users.map(async user => ({
             ...user,
