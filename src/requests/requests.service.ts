@@ -41,7 +41,7 @@ export class RequestsService {
     return await this.requestModel.find({
       ...filters,
       ...searchParams,
-    });
+    }).populate('expenses');
   }
 
   async findOne(id: string) {

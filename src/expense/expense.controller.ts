@@ -38,6 +38,7 @@ export class ExpenseController {
       properties: {
         value: { type: 'number', example: 100.5 },
         userId: { type: 'string', example: '60d21b4667d0d8992e610c85' },
+        requestId: {type: 'string', example: '60d21b4667d0d8992e610c85'},
         type: { type: 'string', example: 'Food' },
         date: { type: 'string', format: 'date-time', example: '2023-05-20T14:48:00.000Z' },
         description: { type: 'string', example: 'Lunch at a restaurant' },
@@ -50,9 +51,11 @@ export class ExpenseController {
     @Body() createExpenseDto: CreateExpenseDto, 
     @UploadedFile() file: Express.Multer.File
   ) {
+    const data = await this.expenseService.createExpense(createExpenseDto, file)
+
     return {
       message: 'Expense created successfully',
-      data: await this.expenseService.createExpense(createExpenseDto, file),
+      data: data,
     };
   }
 

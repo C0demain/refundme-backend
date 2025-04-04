@@ -25,7 +25,7 @@ export class ProjectsService {
     return await this.projectModel.find({
       ...filters,
       ...searchParams
-    });
+    }).populate('requests');
   }
 
   async findOne(id: string) {

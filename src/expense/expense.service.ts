@@ -8,6 +8,8 @@ import { User } from 'src/user/user.schema';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as crypto from 'crypto';
+import { Request } from 'src/requests/request.schema';
+import { Project } from 'src/projects/project.schema';
 
 @Injectable()
 export class ExpenseService {
@@ -20,6 +22,8 @@ export class ExpenseService {
   constructor(
     @InjectModel(Expense.name) private expenseModel: Model<Expense>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(Request.name) private readonly requestModel: Model<Request>,
+    @InjectModel(Project.name) private readonly projectModel: Model<Project>
   ) {
     this.s3 = new S3Client({
       region: this.bucketRegion,
@@ -43,6 +47,24 @@ export class ExpenseService {
           ContentType: file.mimetype,
         }));
       }
+
+      const request = await this.requestModel.findById(createExpenseDto.requestId).populate('expenses').exec();
+      if (!request) {
+        throw new Error('Request not found');
+      }
+
+      const project = await this.projectModel.findById(request.project);
+      if (!project) {
+        throw new Error('Project not found');
+      }
+
+      const currentTotal = request.expenses.reduce((sum, expense: any) => sum + Number(expense.value), 0);
+      const newTotal = currentTotal + Number(createExpenseDto.value);
+      
+
+      if (newTotal > project.limit) {
+        request.isOverLimit = true;
+      }
       
       const expense = new this.expenseModel({
         ...createExpenseDto,
@@ -54,8 +76,20 @@ export class ExpenseService {
       await this.userModel.findByIdAndUpdate(createExpenseDto.userId, {
         $push: { expenses: expense._id },
       });
+
+      request.expenses.push(expense._id);
+      await request.save();
       
-      return expense;
+      const response: any = {
+        ...expense.toObject(),
+        requestId: request._id
+      };
+  
+      if (newTotal > project.limit) {
+        response.limitWarningMessage = `O total das despesas (${newTotal}) excedeu o limite do projeto (${project.limit}).`;
+      }
+  
+      return response;
     } catch (error) {
       console.error('Erro ao criar despesa:', error);
       throw new Error('Expense not created');
