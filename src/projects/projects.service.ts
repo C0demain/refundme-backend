@@ -4,6 +4,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Project } from './project.schema';
 import { Model } from 'mongoose';
+import { ProjectFiltersDto } from 'src/projects/dto/project-filters.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -16,8 +17,8 @@ export class ProjectsService {
     return project.save();
   }
 
-  async findAll() {
-    return await this.projectModel.find();
+  async findAll(filters: ProjectFiltersDto) {
+    return await this.projectModel.find(filters);
   }
 
   async findOne(id: string) {

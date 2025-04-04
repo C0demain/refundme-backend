@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { Roles } from 'src/auth/decorators/role.decorator';
@@ -16,6 +17,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectsService } from './projects.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { ProjectFiltersDto } from 'src/projects/dto/project-filters.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
@@ -30,8 +32,8 @@ export class ProjectsController {
   }
 
   @Get()
-  findAll() {
-    return this.projectsService.findAll();
+  findAll(@Query() filters: ProjectFiltersDto) {
+    return this.projectsService.findAll(filters);
   }
 
   @Get(':id')
