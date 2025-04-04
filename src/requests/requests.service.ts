@@ -6,6 +6,7 @@ import { UpdateRequestDto } from './dto/update-request.dto';
 import { Request } from './request.schema';
 import { Project } from 'src/projects/project.schema';
 import { RequestFiltersDto } from 'src/requests/dto/request-filters.dto';
+import parseSearch from 'src/utils/parseSearch';
 
 @Injectable()
 export class RequestsService {
@@ -28,8 +29,14 @@ export class RequestsService {
     return request;
   }
 
-  async findAll(filters: RequestFiltersDto) {
-    return await this.requestModel.find(filters);
+  async findAll(queryFilters: RequestFiltersDto) {
+    const {search, ...filters} = queryFilters
+    const searchParams = parseSearch(search, ['title', 'code'])
+    
+    return await this.requestModel.find({
+      ...filters,
+      ...searchParams,
+    });
   }
 
   async findOne(id: string) {

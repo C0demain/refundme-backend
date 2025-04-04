@@ -13,4 +13,9 @@ export class RequestFiltersDto{
     @IsString()
     @IsNotEmpty()
     project?: string
+
+    @ApiProperty({description: 'Procura por nome ou código que contenha o texto', required: false})
+    @IsOptional()
+    @IsString()
+    search?: string
 }
