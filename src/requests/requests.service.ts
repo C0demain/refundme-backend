@@ -5,6 +5,7 @@ import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { Request } from './request.schema';
 import { Project } from 'src/projects/project.schema';
+import { RequestFiltersDto } from 'src/requests/dto/request-filters.dto';
 
 @Injectable()
 export class RequestsService {
@@ -27,8 +28,8 @@ export class RequestsService {
     return request;
   }
 
-  async findAll() {
-    return await this.requestModel.find();
+  async findAll(filters: RequestFiltersDto) {
+    return await this.requestModel.find(filters);
   }
 
   async findOne(id: string) {

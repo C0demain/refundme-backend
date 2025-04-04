@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CreateRequestDto } from './dto/create-request.dto';
@@ -13,6 +14,7 @@ import { UpdateRequestDto } from './dto/update-request.dto';
 import { RequestsService } from './requests.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
+import { RequestFiltersDto } from 'src/requests/dto/request-filters.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -27,8 +29,8 @@ export class RequestsController {
   }
 
   @Get()
-  findAll() {
-    return this.requestsService.findAll();
+  findAll(@Query() filters: RequestFiltersDto) {
+    return this.requestsService.findAll(filters);
   }
 
   @Get(':id')
