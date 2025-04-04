@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import { IsEnum, IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { StatusEnum } from 'src/utils/enums/status.enum';
 
 export class CreateRequestDto {
@@ -13,7 +13,7 @@ export class CreateRequestDto {
     description: 'Id of parent project',
   })
   @IsString()
-  @IsNotEmpty()
+  @IsMongoId()
   projectId: string;
 
   @ApiProperty({

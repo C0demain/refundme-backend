@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateRequestDto } from './dto/create-request.dto';
@@ -21,18 +21,23 @@ export class RequestsService {
       project: createRequestDto.projectId,
     });
 
-    await request.save();
+    const project = await this.projectModel.findById(
+      createRequestDto.projectId,
+    );
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
 
-    await this.projectModel.findByIdAndUpdate(createRequestDto.projectId, {
-      $push: { requests: request._id },
-    });
-    return request;
+    project.requests.push(request._id);
+    await project.save();
+    
+    return request.save();
   }
 
   async findAll(queryFilters: RequestFiltersDto) {
-    const {search, ...filters} = queryFilters
-    const searchParams = parseSearch(search, ['title', 'code'])
-    
+    const { search, ...filters } = queryFilters;
+    const searchParams = parseSearch(search, ['title', 'code']);
+
     return await this.requestModel.find({
       ...filters,
       ...searchParams,
