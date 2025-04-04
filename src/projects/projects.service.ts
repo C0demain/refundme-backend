@@ -5,6 +5,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Project } from './project.schema';
 import { Model } from 'mongoose';
 import { ProjectFiltersDto } from 'src/projects/dto/project-filters.dto';
+import parseSearch from 'src/utils/parseSearch';
 
 @Injectable()
 export class ProjectsService {
@@ -17,8 +18,14 @@ export class ProjectsService {
     return project.save();
   }
 
-  async findAll(filters: ProjectFiltersDto) {
-    return await this.projectModel.find(filters);
+  async findAll(queryFilters: ProjectFiltersDto) {
+    const {search, ...filters} = queryFilters
+    const searchParams = parseSearch(search, ['title', 'code'])
+    
+    return await this.projectModel.find({
+      ...filters,
+      ...searchParams
+    });
   }
 
   async findOne(id: string) {
