@@ -42,6 +42,6 @@ export class ProjectsService {
 
   async remove(id: string) {
     await this.projectModel.deleteOne({ _id: id }).exec();
-    return { message: `Project with ${id} was removed` };
+    return { message: `Projeto com id ${id} removido com sucesso`};
   }
 }

@@ -11,7 +11,7 @@ export class Request {
   @Prop({ required: true })
   title: string;
 
-  @Prop({ required: true, default: StatusEnum.PENDING, enum: StatusEnum })
+  @Prop({ required: true, default: StatusEnum.DRAFT, enum: StatusEnum })
   status: StatusEnum;
 
   @Prop({ type: Types.ObjectId, ref: 'Project', required: true })
