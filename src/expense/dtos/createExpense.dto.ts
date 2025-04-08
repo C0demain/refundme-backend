@@ -50,11 +50,4 @@ export class CreateExpenseDto {
   @IsOptional()
   description?: string;
 
-  @ApiPropertyOptional({
-    example: 'image-url',
-    description: 'Image associated with the expense',
-  })
-  @IsOptional()
-  @IsString()
-  image?: string;
 }
