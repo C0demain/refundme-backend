@@ -43,18 +43,30 @@ export class RequestsService {
     return await this.requestModel.find({
       ...filters,
       ...searchParams,
-    }).populate('expenses');
+    }).populate('expenses')
+    .populate({
+      path: 'project',
+      select: 'id title code'
+    });;
   }
 
   async findOne(id: string) {
-    return await this.requestModel.findById(id);
+    return await this.requestModel.findById(id).populate('expenses')
+    .populate({
+      path: 'project',
+      select: 'id title code'
+    });;
   }
 
   async findRequestsByUserId(userId: string): Promise<Request[]> {
     const userExpenses = await this.expenseModel.find({ user: userId }).select('_id');
     const expenseIds = userExpenses.map(e => e._id);
   
-    return this.requestModel.find({ expenses: { $in: expenseIds } }).populate('expenses');
+    return this.requestModel.find({ expenses: { $in: expenseIds } }).populate('expenses')
+    .populate({
+      path: 'project',
+      select: 'id title code'
+    });
   }
 
   async update(id: string, projectRequestData: UpdateRequestDto) {
