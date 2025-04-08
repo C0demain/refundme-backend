@@ -16,7 +16,7 @@ export class Expense {
   description: string;
 
   @Prop()
-  image: string; // Agora armazena a URL da imagem no Supabase
+  image: string; // armazena o caminho absoluto no bucket, no get é transformado em url
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   user: Types.ObjectId;

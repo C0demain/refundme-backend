@@ -33,6 +33,11 @@ export class RequestsController {
     return this.requestsService.findAll(filters);
   }
 
+  @Get('user/:userId')
+  async getRequestsByUserId(@Param('userId') userId: string) {
+    return this.requestsService.findRequestsByUserId(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.requestsService.findOne(id);

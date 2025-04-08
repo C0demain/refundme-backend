@@ -1,18 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { Request } from './request.schema';
 import { Project } from 'src/projects/project.schema';
 import { RequestFiltersDto } from 'src/requests/dto/request-filters.dto';
 import parseSearch from 'src/utils/parseSearch';
+import { Expense } from 'src/expense/expense.schema';
 
 @Injectable()
 export class RequestsService {
   constructor(
     @InjectModel(Request.name) private requestModel: Model<Request>,
     @InjectModel(Project.name) private projectModel: Model<Project>,
+    @InjectModel(Expense.name) private expenseModel: Model<Expense>
   ) {}
 
   async create(createRequestDto: CreateRequestDto) {
@@ -46,6 +48,13 @@ export class RequestsService {
 
   async findOne(id: string) {
     return await this.requestModel.findById(id);
+  }
+
+  async findRequestsByUserId(userId: string): Promise<Request[]> {
+    const userExpenses = await this.expenseModel.find({ user: userId }).select('_id');
+    const expenseIds = userExpenses.map(e => e._id);
+  
+    return this.requestModel.find({ expenses: { $in: expenseIds } }).populate('expenses');
   }
 
   async update(id: string, projectRequestData: UpdateRequestDto) {
