@@ -8,19 +8,22 @@ import { Project } from 'src/projects/project.schema';
 import { RequestFiltersDto } from 'src/requests/dto/request-filters.dto';
 import parseSearch from 'src/utils/parseSearch';
 import { Expense } from 'src/expense/expense.schema';
+import { User } from 'src/user/user.schema';
 
 @Injectable()
 export class RequestsService {
   constructor(
     @InjectModel(Request.name) private requestModel: Model<Request>,
     @InjectModel(Project.name) private projectModel: Model<Project>,
-    @InjectModel(Expense.name) private expenseModel: Model<Expense>
+    @InjectModel(Expense.name) private expenseModel: Model<Expense>,
+    @InjectModel(User.name) private userModel: Model<User>
   ) {}
 
   async create(createRequestDto: CreateRequestDto) {
     const request = new this.requestModel({
       ...createRequestDto,
       project: createRequestDto.projectId,
+      user: createRequestDto.userId
     });
 
     const project = await this.projectModel.findById(
@@ -30,8 +33,15 @@ export class RequestsService {
       throw new NotFoundException('Project not found');
     }
 
-    project.requests.push(request._id);
-    await project.save();
+    const user = await this.userModel.findById(
+      createRequestDto.userId,
+    );
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.requests.push(request._id);
+    await user.save();
     
     return request.save();
   }
@@ -43,7 +53,8 @@ export class RequestsService {
     return await this.requestModel.find({
       ...filters,
       ...searchParams,
-    }).populate('expenses')
+    })
+    .populate('expenses')
     .populate({
       path: 'project',
       select: 'id title code'
@@ -55,14 +66,18 @@ export class RequestsService {
     .populate({
       path: 'project',
       select: 'id title code'
-    });;
+    });
   }
 
-  async findRequestsByUserId(userId: string): Promise<Request[]> {
+  async findRequestsByUserId(userId: string, queryFilters: RequestFiltersDto): Promise<Request[]> {
+    const { search, ...filters } = queryFilters;
+    const searchParams = parseSearch(search, ['title', 'code']);
+    console.debug(searchParams, filters)
+
     const userExpenses = await this.expenseModel.find({ user: userId }).select('_id');
     const expenseIds = userExpenses.map(e => e._id);
   
-    return this.requestModel.find({ expenses: { $in: expenseIds } }).populate('expenses')
+    return this.requestModel.find({ expenses: { $in: expenseIds }, ...filters, ...searchParams }).populate('expenses')
     .populate({
       path: 'project',
       select: 'id title code'
@@ -74,7 +89,7 @@ export class RequestsService {
       { _id: id },
       projectRequestData,
       { new: true },
-    );
+    ).exec()
   }
 
   async remove(id: string) {

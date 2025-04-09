@@ -4,14 +4,16 @@ import { Model } from "mongoose";
 import { User } from "./user.schema";
 import { CreateUserDto } from "./dtos/createUser.dto";
 import { UpdateUserDto } from "./dtos/updateUser.dto";
-import { ExpenseService } from "src/expense/expense.service";
 import { UserFiltersDto } from "src/user/dtos/user-filters.dto";
 import parseSearch from "src/utils/parseSearch";
 
 
 @Injectable()
 export class UserService{
-    constructor(@InjectModel(User.name) private userModel: Model<User>, private readonly expenseService:ExpenseService){}
+    constructor(
+        @InjectModel(User.name) private userModel: Model<User>,
+        @InjectModel(Request.name) private readonly requestModel: Model<Request>
+    ){}
     
     async createUser(createUserDto: CreateUserDto){
         const newUser = new this.userModel(createUserDto);
@@ -24,21 +26,6 @@ export class UserService{
         const searchParams = parseSearch(search, ['name', 'email'])
         
         return this.userModel.find( {...filters, ...searchParams} ).exec();
-    }
-
-    async getUsersWithExpenses(queryFilters: UserFiltersDto){
-        const {search, ...filters} = queryFilters
-        const searchParams = parseSearch(search, ['name', 'email'])
-
-        const users = await this.userModel.find( {...filters, ...searchParams} ).populate('expenses').lean().exec();
-
-        return Promise.all(users.map(async user => ({
-            ...user,
-            expenses: await Promise.all(user.expenses.map(async (expense: any) => ({
-                ...expense,
-                image: expense.image ? await this.expenseService.getSignedImageUrl(expense.image) : null,
-            }))),
-        })));
     }
     
     async getUserById(id: string){

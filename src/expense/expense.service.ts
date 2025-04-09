@@ -69,13 +69,8 @@ export class ExpenseService {
       const expense = new this.expenseModel({
         ...createExpenseDto,
         image: fileKey, // Guardamos apenas a chave do arquivo, não a URL
-        user: createExpenseDto.userId,
       });
       await expense.save();
-      
-      await this.userModel.findByIdAndUpdate(createExpenseDto.userId, {
-        $push: { expenses: expense._id },
-      });
 
       request.expenses.push(expense._id);
       await request.save();

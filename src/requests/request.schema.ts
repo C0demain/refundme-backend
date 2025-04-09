@@ -20,6 +20,9 @@ export class Request {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Expense' }] })
   expenses: Types.ObjectId[];
 
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  user: Types.ObjectId;
+
   @Prop()
   isOverLimit: boolean;
 }

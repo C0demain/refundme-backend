@@ -2,6 +2,7 @@ import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsDateString,
+  IsMongoId,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -17,16 +18,10 @@ export class CreateExpenseDto {
 
   @ApiProperty({
     example: '60d21b4667d0d8992e610c85',
-    description: 'User ID associated with the expense',
-  })
-  @IsString()
-  @IsNotEmpty()
-  userId: string;
-
-  @ApiProperty({
-    example: '60d21b4667d0d8992e610c85',
     description: 'Request ID associated with the expense',
   })
+  @IsString()
+  @IsMongoId()
   requestId: string;
 
   @ApiProperty({ example: 'Food', description: 'Type of the expense' })

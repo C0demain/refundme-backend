@@ -43,13 +43,7 @@ export class UserController {
   async getUsers(@Query() filters: UserFiltersDto) {
     return this.userService.getUsers(filters);
   }
-  
-  @Get('/with-expenses')
-  @ApiOperation({ summary: 'Retrieve all users with their expenses' })
-  @ApiResponse({ status: 200, description: 'Users with expenses retrieved successfully' })
-  async getUsersWithExpenses(@Query() filters: UserFiltersDto) {
-    return this.userService.getUsersWithExpenses(filters);
-  }
+
   
   @Get(':id')
   @ApiOperation({ summary: 'Retrieve a user by ID' })

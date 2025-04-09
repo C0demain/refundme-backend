@@ -18,9 +18,6 @@ export class Expense {
   @Prop()
   image: string; // armazena o caminho absoluto no bucket, no get é transformado em url
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  user: Types.ObjectId;
-
   @Prop({ type: Types.ObjectId, ref: 'Request' })
   request: Types.ObjectId;
 }

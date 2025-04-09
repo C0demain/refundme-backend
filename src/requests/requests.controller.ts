@@ -34,8 +34,8 @@ export class RequestsController {
   }
 
   @Get('user/:userId')
-  async getRequestsByUserId(@Param('userId') userId: string) {
-    return this.requestsService.findRequestsByUserId(userId);
+  async getRequestsByUserId(@Param('userId') userId: string, @Query() filters: RequestFiltersDto) {
+    return this.requestsService.findRequestsByUserId(userId, filters);
   }
 
   @Get(':id')

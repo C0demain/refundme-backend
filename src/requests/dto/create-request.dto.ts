@@ -17,6 +17,14 @@ export class CreateRequestDto {
   projectId: string;
 
   @ApiProperty({
+    example: '67dd56d51458989c9c37d4c7',
+    description: 'Id of parent user',
+  })
+  @IsString()
+  @IsMongoId()
+  userId: string;
+
+  @ApiProperty({
     example: 'Pendente',
     description: 'Status of the request',
   })

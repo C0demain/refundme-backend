@@ -14,8 +14,8 @@ export class User{
   @Prop({ required: true })
   password: string;
 
-  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Expense' }] }) 
-  expenses: Types.ObjectId[];
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Request' }] }) 
+  requests: Types.ObjectId[];
 
   @Prop({ required: true, default: Role.USER })
   @IsEnum(Role)
