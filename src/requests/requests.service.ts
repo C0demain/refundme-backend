@@ -58,7 +58,8 @@ export class RequestsService {
     .populate({
       path: 'project',
       select: 'id title code'
-    });;
+    })
+    .populate('user', 'id name');
   }
 
   async findOne(id: string) {
@@ -66,7 +67,10 @@ export class RequestsService {
     .populate({
       path: 'project',
       select: 'id title code'
-    });
+    })
+    .populate('expenses')
+    .populate('user', 'id name')
+    ;
   }
 
   async findRequestsByUserId(userId: string, queryFilters: RequestFiltersDto): Promise<Request[]> {
@@ -81,7 +85,9 @@ export class RequestsService {
     .populate({
       path: 'project',
       select: 'id title code'
-    });
+    })
+    .populate('expenses')
+    .populate('user', 'id name');
   }
 
   async update(id: string, projectRequestData: UpdateRequestDto) {

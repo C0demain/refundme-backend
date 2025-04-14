@@ -25,15 +25,15 @@ export class UserService{
         const {search, ...filters} = queryFilters
         const searchParams = parseSearch(search, ['name', 'email'])
         
-        return this.userModel.find( {...filters, ...searchParams} ).exec();
+        return this.userModel.find( {...filters, ...searchParams} ).populate('requests').exec();
     }
     
     async getUserById(id: string){
-        return this.userModel.findById(id).populate('expenses').exec();
+        return this.userModel.findById(id).populate('requests').exec();
     }
 
     async getUserByEmail(email: string){
-        return this.userModel.findOne({email}).exec()
+        return this.userModel.findOne({email}).populate('requests').exec()
     }
     
     async updateUser(id: string, updateUser: UpdateUserDto){

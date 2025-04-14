@@ -97,7 +97,7 @@ export class ExpenseService {
   }
 
   async getExpenses() {
-    const expenses = await this.expenseModel.find().populate('user', 'id name').exec();
+    const expenses = await this.expenseModel.find().exec();
     for (const expense of expenses) {
       expense.image = await this.getSignedImageUrl(expense.image);
     }
