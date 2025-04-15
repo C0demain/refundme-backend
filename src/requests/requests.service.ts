@@ -23,28 +23,30 @@ export class RequestsService {
     const request = new this.requestModel({
       ...createRequestDto,
       project: createRequestDto.projectId,
-      user: createRequestDto.userId
+      user: createRequestDto.userId,
     });
-
-    const project = await this.projectModel.findById(
-      createRequestDto.projectId,
-    );
+  
+    const project = await this.projectModel.findById(createRequestDto.projectId);
     if (!project) {
       throw new NotFoundException('Project not found');
     }
-
-    const user = await this.userModel.findById(
-      createRequestDto.userId,
-    );
+  
+    const user = await this.userModel.findById(createRequestDto.userId);
     if (!user) {
       throw new NotFoundException('User not found');
     }
+  
+    const savedRequest = await request.save();
 
-    user.requests.push(request._id);
+    user.requests.push(savedRequest._id);
     await user.save();
     
-    return request.save();
+    project.requests.push(savedRequest._id);
+    await project.save();
+  
+    return savedRequest;
   }
+  
 
   async findAll(queryFilters: RequestFiltersDto) {
     const { search, ...filters } = queryFilters;
