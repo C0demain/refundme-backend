@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { Request } from './request.schema';
@@ -93,18 +93,20 @@ export class RequestsService {
     try {
       const { search, ...filters } = queryFilters;
       const searchParams = parseSearch(search, ['title', 'code']);
-
-      const userExpenses = await this.expenseModel.find({ user: userId }).select('_id');
-      const expenseIds = userExpenses.map(e => e._id);
-
-      return await this.requestModel.find({
-        expenses: { $in: expenseIds },
+  
+      const query: any = {
+        user: userId,
         ...filters,
-        ...searchParams
-      })
-      .populate('expenses')
-      .populate({ path: 'project', select: 'id title code' })
-      .populate('user', 'id name');
+        ...searchParams,
+      };
+      const requests = await this.requestModel
+        .find(query)
+        .populate('expenses')
+        .populate({ path: 'project', select: 'id title code' })
+        .populate({ path: 'user', select: 'id name' });
+
+      return requests;
+  
     } catch (error) {
       console.error('Erro ao buscar solicitações do usuário:', error);
       throw new HttpException('Erro ao buscar solicitações do usuário', HttpStatus.INTERNAL_SERVER_ERROR);
