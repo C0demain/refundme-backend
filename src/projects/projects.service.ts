@@ -6,6 +6,7 @@ import { Project } from './project.schema';
 import { Model } from 'mongoose';
 import { ProjectFiltersDto } from 'src/projects/dto/project-filters.dto';
 import parseSearch from 'src/utils/parseSearch';
+import { RequestFiltersDto } from 'src/requests/dto/request-filters.dto';
 
 @Injectable()
 export class ProjectsService {
@@ -13,7 +14,7 @@ export class ProjectsService {
     @InjectModel(Project.name) private projectModel: Model<Project>,
   ) {}
 
-  async create(createProjectDto: CreateProjectDto) {
+  async create(createProjectDto: CreateProjectDto): Promise<Project> {
     try {
       const project = new this.projectModel(createProjectDto);
       return await project.save();
@@ -22,6 +23,7 @@ export class ProjectsService {
       throw new HttpException('Erro ao criar projeto', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+  
 
   async findAll(queryFilters: ProjectFiltersDto) {
     try {
@@ -52,6 +54,30 @@ export class ProjectsService {
     }
   }
 
+  async findProjectsByUserId(userId: string, queryFilters: RequestFiltersDto): Promise<Project[]> {
+    try {
+      const { search, ...filters } = queryFilters;
+      const searchParams = parseSearch(search, ['title', 'code']);
+  
+      const query: any = {
+        users: userId,
+        ...filters,
+        ...searchParams,
+      };
+  
+      const projects = await this.projectModel
+        .find(query)
+        .populate({ path: 'requests', select: 'id title code' });
+  
+      return projects;
+  
+    } catch (error) {
+      console.error('Erro ao buscar projetos do usuário:', error);
+      throw new HttpException('Erro ao buscar projetos do usuário', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+  
+
   async update(id: string, updateProjectDto: UpdateProjectDto) {
     try {
       const project = await this.projectModel.findByIdAndUpdate(
@@ -71,6 +97,26 @@ export class ProjectsService {
       throw new HttpException('Erro ao atualizar projeto', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async addUsersToProject(projectId: string, userIds: string[]): Promise<Project> {
+    try {
+      const updatedProject = await this.projectModel.findByIdAndUpdate(
+        projectId,
+        { $addToSet: { users: { $each: userIds } } },
+        { new: true }
+      ).populate('users', 'name email');
+  
+      if (!updatedProject) {
+        throw new NotFoundException('Projeto não encontrado');
+      }
+  
+      return updatedProject;
+    } catch (error) {
+      console.error('Erro ao adicionar usuários ao projeto:', error);
+      throw new HttpException('Erro ao adicionar usuários ao projeto', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+  
 
   async remove(id: string) {
     try {

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray, IsMongoId } from 'class-validator';
 
 export class CreateProjectDto {
   @ApiProperty({ example: 'Project 1', description: 'Name of the project' })
@@ -29,4 +29,10 @@ export class CreateProjectDto {
   })
   @IsNotEmpty()
   limit: number;
+
+  @ApiProperty({ type: [String], example: ['userId1', 'userId2'], description: 'Array of user IDs' })
+  @IsArray()
+  @IsMongoId({ each: true })
+  @IsOptional()
+  users?: string[];
 }

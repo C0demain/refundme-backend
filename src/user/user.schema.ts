@@ -17,9 +17,11 @@ export class User{
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Request' }] }) 
   requests: Types.ObjectId[];
 
-  @Prop({ required: true, default: Role.USER })
-  @IsEnum(Role)
+  @Prop({ enum: Role, required: true, default: Role.USER })
   role: Role;
+
+  @Prop({type: [{type: Types.ObjectId, ref: 'Project'}]})
+  projects: Types.ObjectId[];
 }
 
 export const userSchema = SchemaFactory.createForClass(User);

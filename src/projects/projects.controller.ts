@@ -18,6 +18,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectsService } from './projects.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ProjectFiltersDto } from 'src/projects/dto/project-filters.dto';
+import { RequestFiltersDto } from 'src/requests/dto/request-filters.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
@@ -36,10 +37,22 @@ export class ProjectsController {
     return this.projectsService.findAll(filters);
   }
 
+  @Get('user/:userId')
+  async getProjectsByUserId(@Param('userId') userId: string, @Query() filters: RequestFiltersDto) {
+    return await this.projectsService.findProjectsByUserId(userId, filters);
+  }
+
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.projectsService.findOne(id);
   }
+
+  @Patch(':projectId/users')
+  async addUsersToProject(@Param('projectId') projectId: string,@Body('userIds') userIds: string[],) {
+    return this.projectsService.addUsersToProject(projectId, userIds);
+  }
+
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
