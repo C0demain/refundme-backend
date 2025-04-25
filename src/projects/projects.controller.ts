@@ -49,7 +49,7 @@ export class ProjectsController {
   }
 
   @Patch(':projectId/users')
-  async addUsersToProject(@Param('projectId') projectId: string,@Body('userIds') userIds: string[],) {
+  async addUsersToProject(@Param('projectId') projectId: string,@Body('userIds') userIds: [string]) {
     return this.projectsService.addUsersToProject(projectId, userIds);
   }
 
@@ -63,4 +63,10 @@ export class ProjectsController {
   remove(@Param('id') id: string) {
     return this.projectsService.remove(id);
   }
+
+  @Delete(':projectId/users/:userId')
+  removeUserFromProject(@Param('projectId') projectId: string,@Param('userId') userId: string) {
+    return this.projectsService.removeUserFromProject(projectId, userId);
+  }
+
 }

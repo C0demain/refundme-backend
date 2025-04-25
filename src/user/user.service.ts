@@ -37,7 +37,7 @@ export class UserService {
       const { search, ...filters } = queryFilters;
       const searchParams = parseSearch(search, ['name', 'email']);
 
-      return await this.userModel.find({ ...filters, ...searchParams }).populate('requests').exec();
+      return await this.userModel.find({ ...filters, ...searchParams }).populate('requests').populate('projects').exec();
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
       throw new HttpException('Erro ao buscar usuários', HttpStatus.INTERNAL_SERVER_ERROR);

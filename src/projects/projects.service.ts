@@ -7,20 +7,87 @@ import { Model } from 'mongoose';
 import { ProjectFiltersDto } from 'src/projects/dto/project-filters.dto';
 import parseSearch from 'src/utils/parseSearch';
 import { RequestFiltersDto } from 'src/requests/dto/request-filters.dto';
+import { User } from 'src/user/user.schema';
 
 @Injectable()
 export class ProjectsService {
   constructor(
     @InjectModel(Project.name) private projectModel: Model<Project>,
+    @InjectModel(User.name) private userModel: Model<User>
   ) {}
 
-  async create(createProjectDto: CreateProjectDto): Promise<Project> {
+  async create(createProjectDto: CreateProjectDto){
+    const session = await this.projectModel.db.startSession();
+    session.startTransaction();
+  
     try {
-      const project = new this.projectModel(createProjectDto);
-      return await project.save();
+      const { users, ...projectData } = createProjectDto;
+  
+      const project = new this.projectModel({
+        ...projectData,
+        users: users || [],
+      });
+  
+      const savedProject = await project.save({ session });
+  
+      if (users && users.length > 0) {
+        await this.userModel.updateMany(
+          { _id: { $in: users } },
+          { $addToSet: { projects: savedProject._id } },
+          { session }
+        );
+      }
+  
+      await session.commitTransaction();
+      session.endSession();
+  
+      return await this.projectModel
+        .findById(savedProject._id)
+        .populate('users', 'name email');
+  
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+  
       console.error('Erro ao criar projeto:', error);
       throw new HttpException('Erro ao criar projeto', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+  
+  async removeUserFromProject(projectId: string, userId: string){
+    const session = await this.projectModel.db.startSession();
+    session.startTransaction();
+  
+    try {
+      const updatedProject = await this.projectModel.findByIdAndUpdate(
+        projectId,
+        { $pull: { users: userId } },
+        { new: true, session }
+      );
+  
+      if (!updatedProject) {
+        throw new NotFoundException('Projeto não encontrado');
+      }
+  
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        { $pull: { projects: projectId } },
+        { session }
+      );
+  
+      await session.commitTransaction();
+      session.endSession();
+  
+      return await this.projectModel
+        .findById(projectId)
+        .populate('users', 'name email');
+  
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+  
+      console.error('Erro ao remover usuário do projeto:', error);
+      throw new HttpException('Erro ao remover usuário do projeto', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
   
@@ -98,20 +165,39 @@ export class ProjectsService {
     }
   }
 
-  async addUsersToProject(projectId: string, userIds: string[]): Promise<Project> {
+  async addUsersToProject(projectId: string, userIds: string[]){
+    const session = await this.projectModel.db.startSession();
+    session.startTransaction();
+  
     try {
       const updatedProject = await this.projectModel.findByIdAndUpdate(
         projectId,
         { $addToSet: { users: { $each: userIds } } },
-        { new: true }
-      ).populate('users', 'name email');
+        { new: true, session }
+      );
   
       if (!updatedProject) {
         throw new NotFoundException('Projeto não encontrado');
       }
   
-      return updatedProject;
+      await this.userModel.updateMany(
+        { _id: { $in: userIds } },
+        { $addToSet: { projects: projectId } },
+        { session }
+      );
+  
+      await session.commitTransaction();
+      session.endSession();
+  
+      return await this.projectModel
+        .findById(projectId)
+        .populate('users', 'name email')
+        .populate('requests');
+  
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+  
       console.error('Erro ao adicionar usuários ao projeto:', error);
       throw new HttpException('Erro ao adicionar usuários ao projeto', HttpStatus.INTERNAL_SERVER_ERROR);
     }
