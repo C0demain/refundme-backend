@@ -100,7 +100,7 @@ export class ProjectsService {
       return await this.projectModel.find({
         ...filters,
         ...searchParams,
-      }).populate('requests');
+      }).populate('requests').populate('users', 'name email');
     } catch (error) {
       console.error('Erro ao buscar projetos:', error);
       throw new HttpException('Erro ao buscar projetos', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -109,7 +109,7 @@ export class ProjectsService {
 
   async findOne(id: string) {
     try {
-      const project = await this.projectModel.findById(id);
+      const project = await this.projectModel.findById(id).populate('requests').populate('users', 'name email');
       if (!project) {
         throw new NotFoundException(`Projeto com id ${id} não encontrado`);
       }
@@ -134,7 +134,8 @@ export class ProjectsService {
   
       const projects = await this.projectModel
         .find(query)
-        .populate({ path: 'requests', select: 'id title code' });
+        .populate('requests')
+        .populate('users', 'name email');
   
       return projects;
   
