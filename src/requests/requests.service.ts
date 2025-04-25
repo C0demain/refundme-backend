@@ -62,7 +62,7 @@ export class RequestsService {
         ...searchParams,
       })
       .populate('expenses')
-      .populate({ path: 'project', select: 'id title code' })
+      .populate({ path: 'project', select: 'id title code limit' })
       .populate('user', 'id name');
     } catch (error) {
       console.error('Erro ao buscar solicitações:', error);
