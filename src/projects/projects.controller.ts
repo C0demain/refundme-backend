@@ -22,7 +22,6 @@ import { RequestFiltersDto } from 'src/requests/dto/request-filters.dto';
 import { AddUsersToProjectDto } from './dto/addUsersToProject.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
 @ApiBearerAuth()
 @Controller('projects')
 export class ProjectsController {
