@@ -1,130 +1,200 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateExpenseDto } from './dtos/createExpense.dto';
 import { UpdateExpenseDto } from './dtos/updateExpense.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Expense } from './expense.schema';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { User } from 'src/user/user.schema';
-import { createClient } from '@supabase/supabase-js';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import * as crypto from 'crypto';
+import { Request } from 'src/requests/request.schema';
+import { Project } from 'src/projects/project.schema';
 
 @Injectable()
 export class ExpenseService {
-
-  private supabase;
+  private s3: S3Client;
+  private bucketName = process.env.AWS_BUCKET_NAME || '';
+  private bucketRegion = process.env.AWS_REGION || '';
+  private accessKeyId = process.env.AWS_ACCESS_KEY_ID || '';
+  private secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || '';
 
   constructor(
     @InjectModel(Expense.name) private expenseModel: Model<Expense>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(Request.name) private readonly requestModel: Model<Request>,
+    @InjectModel(Project.name) private readonly projectModel: Model<Project>,
   ) {
-    this.supabase = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_KEY||"");
+    this.s3 = new S3Client({
+      region: this.bucketRegion,
+      credentials: {
+        accessKeyId: this.accessKeyId,
+        secretAccessKey: this.secretAccessKey,
+      },
+    });
   }
 
   async createExpense(createExpenseDto: CreateExpenseDto, file: Express.Multer.File) {
+    let fileKey = '';
+
     try {
-      let imageUrl = null;
-  
-      // Faz o upload da imagem se um arquivo foi enviado
       if (file) {
-        const { data, error } = await this.supabase
-          .storage
-          .from(process.env.SUPABASE_BUCKET || "")
-          .upload(`receipts/${Date.now()}-${file.originalname}`, file.buffer, {
-            contentType: file.mimetype,
-          });
-  
-        if (error) throw error;
-  
-        // Obtém a URL pública do arquivo salvo no Supabase
-        imageUrl = this.supabase.storage
-          .from(process.env.SUPABASE_BUCKET || "")
-          .getPublicUrl(data.path).data.publicUrl;
+        fileKey = `receipts/${crypto.randomUUID()}-${file.originalname}`;
+
+        await this.s3.send(
+          new PutObjectCommand({
+            Bucket: this.bucketName,
+            Key: fileKey,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+          }),
+        );
       }
-  
-      // Criar a despesa e salvar no MongoDB com a referência ao usuário
+
+      const request = await this.requestModel
+        .findById(createExpenseDto.requestId)
+        .populate('expenses')
+        .exec();
+
+      if (!request) {
+        throw new NotFoundException('Request not found');
+      }
+
+      const project = await this.projectModel.findById(request.project);
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+
+      const currentTotal = request.expenses.reduce(
+        (sum, expense: any) => sum + Number(expense.value),
+        0,
+      );
+      const newTotal = currentTotal + Number(createExpenseDto.value);
+
+      if (newTotal > project.limit) {
+        request.isOverLimit = true;
+      }
+
       const expense = new this.expenseModel({
         ...createExpenseDto,
-        image: imageUrl,
-        user: createExpenseDto.userId, // Associando corretamente o usuário
+        image: fileKey,
       });
-  
+
       await expense.save();
-  
-      // Associar a despesa ao usuário no array "expenses"
-      await this.userModel.findByIdAndUpdate(createExpenseDto.userId, {
-        $push: { expenses: expense._id },
-      });
-  
-      return expense;
+
+      request.expenses.push(expense._id);
+      await request.save();
+
+      const response: any = {
+        ...expense.toObject(),
+        requestId: request._id,
+      };
+
+      if (newTotal > project.limit) {
+        response.limitWarningMessage = `O total das despesas (${newTotal}) excedeu o limite do projeto (${project.limit}).`;
+      }
+
+      return response;
     } catch (error) {
       console.error('Erro ao criar despesa:', error);
-      throw new Error('Expense not created');
+
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Erro interno ao criar despesa');
     }
   }
-  
-  
+
+  async getSignedImageUrl(fileKey: string): Promise<string> {
+    if (!fileKey) return '';
+    return getSignedUrl(
+      this.s3,
+      new GetObjectCommand({ Bucket: this.bucketName, Key: fileKey }),
+      { expiresIn: 3600 },
+    );
+  }
 
   async getExpenses() {
     try {
-      return this.expenseModel
-        .find()
-        .populate('user', 'id name')
-        .exec();
+      const expenses = await this.expenseModel.find().exec();
+      for (const expense of expenses) {
+        expense.image = await this.getSignedImageUrl(expense.image);
+      }
+      return expenses;
     } catch (error) {
-      throw new Error('Expenses not found');
+      console.error('Erro ao buscar despesas:', error);
+      throw new InternalServerErrorException('Erro ao buscar despesas');
     }
   }
 
   async getExpenseById(id: string) {
     try {
-      return this.expenseModel.findById(id).exec();
+      const expense = await this.expenseModel.findById(id).exec();
+      if (!expense) {
+        throw new NotFoundException('Despesa não encontrada');
+      }
+
+      expense.image = await this.getSignedImageUrl(expense.image);
+      return expense;
     } catch (error) {
-      throw new Error('Expense not found');
+      console.error('Erro ao buscar despesa:', error);
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Erro ao buscar despesa');
     }
   }
 
   async updateExpense(id: string, updateExpense: UpdateExpenseDto) {
     try {
-      return this.expenseModel
+      const updated = await this.expenseModel
         .findByIdAndUpdate(id, updateExpense, { new: true })
         .exec();
+
+      if (!updated) {
+        throw new NotFoundException('Despesa não encontrada para atualização');
+      }
+
+      return updated;
     } catch (error) {
-      throw new Error('Expense not updated');
+      console.error('Erro ao atualizar despesa:', error);
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Erro ao atualizar despesa');
     }
   }
 
   async deleteExpense(id: string) {
     try {
       const expense = await this.expenseModel.findById(id);
-      if (!expense) {
-        throw new Error('Expense not found');
-      }
-  
-      // Se a despesa tiver uma imagem, deletá-la do Supabase
+      if (!expense) throw new NotFoundException('Despesa não encontrada');
+
       if (expense.image) {
-        const filePath = expense.image.split(`${process.env.SUPABASE_BUCKET}/`)[1];
-        const { error } = await this.supabase.storage
-          .from(process.env.SUPABASE_BUCKET || "")
-          .remove([filePath]);
-  
-        if (error) {
-          console.warn('Erro ao deletar imagem do Supabase:', error.message);
-        }
+        await this.s3.send(
+          new DeleteObjectCommand({ Bucket: this.bucketName, Key: expense.image }),
+        );
       }
-  
-      // Remover a referência da despesa do usuário
-      await this.userModel.updateMany(
-        { expenses: id },
-        { $pull: { expenses: id } }
-      );
-  
-      // Deletar a despesa do banco
+
+      await this.userModel.updateMany({ expenses: id }, { $pull: { expenses: id } });
       await this.expenseModel.findByIdAndDelete(id);
-  
-      return { message: 'Expense deleted successfully' };
+
+      return { message: 'Despesa deletada com sucesso' };
     } catch (error) {
       console.error('Erro ao deletar despesa:', error);
-      throw new Error('Expense not deleted');
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Erro ao deletar despesa');
     }
   }
-  
 }

@@ -10,6 +10,7 @@ on:
     paths:
       - 'release/*'
       - 'hotfix/*'
+  workflow_call:
 
 jobs:
   build:
