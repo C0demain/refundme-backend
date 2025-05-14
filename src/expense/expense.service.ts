@@ -20,6 +20,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as crypto from 'crypto';
 import { Request } from 'src/requests/request.schema';
 import { Project } from 'src/projects/project.schema';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class ExpenseService {
@@ -136,18 +137,31 @@ export class ExpenseService {
     );
   }
 
-  async getExpenses() {
+  async getExpenses(startDate?: string, endDate?: string) {
     try {
-      const expenses = await this.expenseModel.find().exec();
+      const filter: any = {};
+
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        filter.date = { $gte: start, $lte: end };
+      }
+
+      const expenses = await this.expenseModel.find(filter).exec();
+
       for (const expense of expenses) {
         expense.image = await this.getSignedImageUrl(expense.image);
       }
+
       return expenses;
     } catch (error) {
       console.error('Erro ao buscar despesas:', error);
       throw new InternalServerErrorException('Erro ao buscar despesas');
     }
   }
+
 
   async getExpenseById(id: string) {
     try {
@@ -168,6 +182,68 @@ export class ExpenseService {
       throw new InternalServerErrorException('Erro ao buscar despesa');
     }
   }
+
+  async getDashboardStatsRaw(
+  startDate: string,
+  endDate: string,
+  granularity: 'week' | 'month' | 'quarter' | 'semester',) {
+  if (!startDate || !endDate) {
+    throw new BadRequestException('Data inicial e final são obrigatórias');
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
+
+  const expenses = await this.expenseModel
+    .find({ date: { $gte: start, $lte: end } })
+    .lean();
+
+  const grouped: Record<
+    string,
+    { totalValue: number; types: Record<string, number> }
+  > = {};
+
+  for (const expense of expenses) {
+    const date = dayjs(expense.date);
+
+    let key: string;
+
+    switch (granularity) {
+      case 'week':
+        key = date.startOf('week').format('YYYY-MM-DD');
+        break;
+      case 'month':
+        key = date.startOf('month').format('YYYY-MM');
+        break;
+      case 'quarter':
+        key = `${date.year()}-Q${Math.floor(date.month() / 3) + 1}`;
+        break;
+      case 'semester':
+        key = `${date.year()}-S${Math.floor(date.month() / 6) + 1}`;
+        break;
+      default:
+        throw new BadRequestException('Granularidade inválida');
+    }
+
+    if (!grouped[key]) {
+      grouped[key] = { totalValue: 0, types: {} };
+    }
+
+    grouped[key].totalValue += expense.value;
+    grouped[key].types[expense.type] = (grouped[key].types[expense.type] || 0) + 1;
+  }
+
+  const result = Object.entries(grouped).map(([period, data]) => ({
+    period,
+    totalValue: parseFloat(data.totalValue.toFixed(2)),
+    types: Object.entries(data.types).map(([type, count]) => ({ type, count })),
+  }));
+
+  result.sort((a, b) => a.period.localeCompare(b.period));
+
+  return result;
+}
 
   async updateExpense(id: string, updateExpense: UpdateExpenseDto) {
     try {

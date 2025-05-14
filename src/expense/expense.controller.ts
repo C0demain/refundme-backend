@@ -9,8 +9,9 @@ import {
   UseInterceptors,
   UploadedFile,
   UseGuards,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiConsumes, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiConsumes, ApiParam, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ExpenseService } from './expense.service';
 import { CreateExpenseDto } from './dtos/createExpense.dto';
 import { UpdateExpenseDto } from './dtos/updateExpense.dto';
@@ -61,12 +62,34 @@ export class ExpenseController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Retrieve all expenses' })
+  @ApiOperation({ summary: 'Retrieve all expenses (optionally filtered by date)' })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Expenses retrieved successfully' })
-  async findAll() {
+  async findAll(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,) {
+    const expenses = await this.expenseService.getExpenses(startDate, endDate);
     return {
       message: 'Expenses retrieved successfully',
-      data: await this.expenseService.getExpenses(),
+      data: expenses,
+    };
+  }
+
+  @Get('dashboard-stats')
+  @ApiOperation({ summary: 'Dashboard grouped expenses by period and type (raw method)' })
+  @ApiQuery({ name: 'startDate', required: true, type: String })
+  @ApiQuery({ name: 'endDate', required: true, type: String })
+  @ApiQuery({ name: 'granularity', required: true, enum: ['week', 'month', 'quarter', 'semester'] })
+  @ApiResponse({ status: 200, description: 'Grouped dashboard data retrieved successfully' })
+  async getDashboardStats(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('granularity') granularity: 'week' | 'month' | 'quarter' | 'semester',) {
+    const data = await this.expenseService.getDashboardStatsRaw(startDate, endDate, granularity);
+    return {
+      message: 'Grouped dashboard data retrieved successfully',
+      data,
     };
   }
 
