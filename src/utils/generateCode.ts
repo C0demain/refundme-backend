@@ -1,6 +1,6 @@
 export default function generateCode(length: number) {
   const characters =
-    '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let code: string = '';
 
   for (let x = 0; x < length; x++) {

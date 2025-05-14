@@ -42,6 +42,8 @@ export class ExpenseController {
         date: { type: 'string', format: 'date-time', example: '2023-05-20T14:48:00.000Z' },
         description: { type: 'string', example: 'Lunch at a restaurant' },
         image: { type: 'string', format: 'binary' },
+        kilometerPerLiter: { type: 'number', example: 10 },
+        distance: { type: 'number', example: 100 }
       },
     },
   })
