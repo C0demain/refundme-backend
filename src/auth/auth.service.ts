@@ -8,31 +8,51 @@ export class AuthService {
     constructor(
         private userService: UserService,
         private jwtService: JwtService
-    ){}
+    ) { }
 
-    async validateUser(email: string, password: string){
+    async validateUser(email: string, password: string) {
         const user = await this.userService.getUserByEmail(email)
-        if(user && user.password === password) return user;
+        if (user && user.password === password) return user;
         return null
     }
 
-    async login(loginDto: LoginDto){
-        const {email, password} = loginDto
-        const user = await this.userService.getUserByEmail(email)
-        if(!user){
-            throw new UnauthorizedException('Invalid email or password')
+    async login(loginDto: LoginDto) {
+        const { email, password, frontend } = loginDto;
+
+        const user = await this.userService.getUserByEmail(email);
+
+        if (!user) {
+            throw new UnauthorizedException('Invalid email or password');
         }
 
-        if(user.password !== password){
-            throw new UnauthorizedException('Invalid email or password')
+        if (user.password !== password) {
+            throw new UnauthorizedException('Invalid email or password');
         }
 
-        const token = await this.jwtService.signAsync(user.toJSON())
-        
-        return { 
-            user_id: user.id, 
+        // Bloqueia acesso para role=admin no mobile
+        if (user.role === 'admin' && frontend !== 'web') {
+            throw new UnauthorizedException('Admin users cannot access the mobile app.');
+        }
+
+        // Bloqueia acesso para role=user no web
+        if (user.role === 'user' && frontend !== 'mobile') {
+            throw new UnauthorizedException('Regular users cannot access the web app.');
+        }
+
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            role: user.role,
+            frontend
+        };
+
+        const token = await this.jwtService.signAsync(payload);
+
+        return {
+            user_id: user.id,
             access_token: token,
-            role: user.role
+            role: user.role,
+            frontend: frontend
         }
 
     }
