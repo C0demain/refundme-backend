@@ -85,6 +85,17 @@ export class ExpenseService {
         request.isOverLimit = true;
       }
 
+      if (createExpenseDto.kilometerPerLiter && createExpenseDto.distance) {
+        const kmPerLiter = createExpenseDto.kilometerPerLiter;
+        const distance = createExpenseDto.distance;
+        const gasolinePrice = 6.28; // considera valor médio nacional do litro da gasolina como R$6,28
+
+        if (!isNaN(kmPerLiter) && !isNaN(distance) && kmPerLiter > 0) {
+          const fuelValue = (distance / kmPerLiter) * gasolinePrice;
+          createExpenseDto.value = parseFloat(fuelValue.toFixed(2));
+        }
+      }
+
       const expense = new this.expenseModel({
         ...createExpenseDto,
         image: fileKey,
