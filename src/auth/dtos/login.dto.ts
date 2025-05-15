@@ -10,10 +10,4 @@ export class LoginDto {
     @IsString()
     @IsNotEmpty()
     password: string;
-
-    @ApiProperty({ example: "web", description: "web frontend" })
-    @IsIn(['web', 'mobile'], { message: 'Frontend must be either "web" or "mobile"' })
-    @IsString()
-    @IsNotEmpty()
-    frontend: 'web' | 'mobile';
 }

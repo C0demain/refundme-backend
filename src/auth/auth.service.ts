@@ -16,8 +16,8 @@ export class AuthService {
         return null
     }
 
-    async login(loginDto: LoginDto) {
-        const { email, password, frontend } = loginDto;
+    async login(loginDto: LoginDto, clientType: string) {
+        const { email, password } = loginDto;
 
         const user = await this.userService.getUserByEmail(email);
 
@@ -29,21 +29,20 @@ export class AuthService {
             throw new UnauthorizedException('Invalid email or password');
         }
 
-        // Bloqueia acesso para role=admin no mobile
-        if (user.role === 'admin' && frontend !== 'web') {
-            throw new UnauthorizedException('Admin users cannot access the mobile app.');
+        // Validação baseada na role e no tipo de cliente
+        if (user.role === 'admin' && clientType !== 'web') {
+            throw new UnauthorizedException('Usuários administradores podem acessar apenas a versão web do sistema.');
         }
 
-        // Bloqueia acesso para role=user no web
-        if (user.role === 'user' && frontend !== 'mobile') {
-            throw new UnauthorizedException('Regular users cannot access the web app.');
+        if (user.role === 'user' && clientType !== 'mobile') {
+            throw new UnauthorizedException('Usuários comuns podem acessar apenas a versão mobile do sistema.');
         }
 
         const payload = {
             sub: user.id,
             email: user.email,
             role: user.role,
-            frontend
+            clientType
         };
 
         const token = await this.jwtService.signAsync(payload);
@@ -52,7 +51,7 @@ export class AuthService {
             user_id: user.id,
             access_token: token,
             role: user.role,
-            frontend: frontend
+            clientType
         }
 
     }
