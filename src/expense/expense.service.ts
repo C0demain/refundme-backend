@@ -21,6 +21,7 @@ import * as crypto from 'crypto';
 import { Request } from 'src/requests/request.schema';
 import { Project } from 'src/projects/project.schema';
 import * as dayjs from 'dayjs';
+import { ExpenseFiltersDto } from './dtos/expenseFilter.dto';
 
 @Injectable()
 export class ExpenseService {
@@ -137,30 +138,42 @@ export class ExpenseService {
     );
   }
 
-  async getExpenses(startDate?: string, endDate?: string) {
+  async getExpenses(filters: ExpenseFiltersDto) {
     try {
+      const { startDate, endDate, page = 1, limit = 15 } = filters;
       const filter: any = {};
 
       if (startDate && endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
-
         filter.date = { $gte: start, $lte: end };
       }
 
-      const expenses = await this.expenseModel.find(filter).exec();
+      const skip = (page - 1) * limit;
+
+      const [expenses, total] = await Promise.all([
+        this.expenseModel.find(filter).skip(skip).limit(limit).sort({ date: -1 }).exec(),
+        this.expenseModel.countDocuments(filter),
+      ]);
 
       for (const expense of expenses) {
         expense.image = await this.getSignedImageUrl(expense.image);
       }
 
-      return expenses;
+      return {
+        data: expenses,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.error('Erro ao buscar despesas:', error);
       throw new InternalServerErrorException('Erro ao buscar despesas');
     }
   }
+
 
 
   async getExpenseById(id: string) {

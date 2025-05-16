@@ -21,6 +21,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/auth/decorators/role.decorator';
 import { Role } from 'src/user/enums/role.enum';
 import { RolesGuard } from 'src/auth/guards/role.guard';
+import { ExpenseFiltersDto } from './dtos/expenseFilter.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('Expenses')
@@ -63,16 +64,12 @@ export class ExpenseController {
 
   @Get()
   @ApiOperation({ summary: 'Retrieve all expenses (optionally filtered by date)' })
-  @ApiQuery({ name: 'startDate', required: false, type: String })
-  @ApiQuery({ name: 'endDate', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Expenses retrieved successfully' })
-  async findAll(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,) {
-    const expenses = await this.expenseService.getExpenses(startDate, endDate);
+  async findAll(@Query() filters: ExpenseFiltersDto) {
+    const result = await this.expenseService.getExpenses(filters);
     return {
       message: 'Expenses retrieved successfully',
-      data: expenses,
+      ...result,
     };
   }
 

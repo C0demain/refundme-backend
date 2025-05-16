@@ -54,21 +54,43 @@ export class RequestsService {
 
   async findAll(queryFilters: RequestFiltersDto) {
     try {
-      const { search, ...filters } = queryFilters;
+      const { search, page = 1, limit = 15, ...filters } = queryFilters;
       const searchParams = parseSearch(search, ['title', 'code']);
+      const skip = (page - 1) * limit;
 
-      return await this.requestModel.find({
-        ...filters,
-        ...searchParams,
-      })
-      .populate('expenses')
-      .populate({ path: 'project', select: 'id title code limit' })
-      .populate('user', 'id name');
+      const [requests, total] = await Promise.all([
+        this.requestModel
+          .find({
+            ...filters,
+            ...searchParams,
+          })
+          .skip(skip)
+          .limit(limit)
+          .populate('expenses')
+          .populate({ path: 'project', select: 'id title code limit' })
+          .populate({ path: 'user', select: 'id name' })
+          .sort({ date: -1 })
+          .exec(),
+
+        this.requestModel.countDocuments({
+          ...filters,
+          ...searchParams,
+        }),
+      ]);
+
+      return {
+        data: requests,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.error('Erro ao buscar solicitações:', error);
       throw new HttpException('Erro ao buscar solicitações', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
 
   async findOne(id: string) {
     try {
