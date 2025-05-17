@@ -47,7 +47,6 @@ export class UserController {
 
   
   @Get(':id')
-  @Roles(Role.ADMIN, Role.USER)
   @ApiOperation({ summary: 'Retrieve a user by ID' })
   @ApiParam({ name: 'id', required: true, description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User retrieved successfully' })
