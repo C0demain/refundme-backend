@@ -22,11 +22,11 @@ export class AuthService {
         const user = await this.userService.getUserByEmail(email);
 
         if (!user) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new UnauthorizedException('E-mail ou senha inválidos.');
         }
 
         if (user.password !== password) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new UnauthorizedException('E-mail ou senha inválidos.');
         }
 
         // Validação baseada na role e no tipo de cliente
