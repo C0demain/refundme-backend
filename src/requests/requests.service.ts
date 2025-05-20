@@ -99,11 +99,20 @@ export class RequestsService {
         .populate({ path: 'project', select: 'id title code limit' })
         .populate('user', 'id name');
 
+      const totalExpenses = request?.expenses.reduce(
+        (sum, expense: any) => sum + Number(expense.value || 0), 0
+      );
+
+      const totalExpensesValue = Number(totalExpenses?.toFixed(2));
+
       if (!request) {
         throw new NotFoundException(`Solicitação com id ${id} não encontrada`);
       }
 
-      return request;
+      return {  
+        ...request.toObject(),
+        totalExpensesValue
+      };
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       console.error('Erro ao buscar solicitação:', error);
