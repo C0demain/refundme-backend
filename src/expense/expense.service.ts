@@ -63,6 +63,19 @@ export class ExpenseService {
         );
       }
 
+      // 1. Calcula o valor quando o tipo é combustível
+      if (createExpenseDto.kilometerPerLiter && createExpenseDto.distance) {
+        const kmPerLiter = createExpenseDto.kilometerPerLiter;
+        const distance = createExpenseDto.distance;
+        const gasolinePrice = 6.28; // considera valor médio nacional do litro da gasolina como R$6,28
+
+        if (!isNaN(kmPerLiter) && !isNaN(distance) && kmPerLiter > 0) {
+          const fuelValue = (distance / kmPerLiter) * gasolinePrice;
+          createExpenseDto.value = parseFloat(fuelValue.toFixed(2));
+        }
+      }
+
+      // 2. Busca a request
       const request = await this.requestModel
         .findById(createExpenseDto.requestId)
         .populate('expenses')
@@ -77,6 +90,7 @@ export class ExpenseService {
         throw new NotFoundException('Project not found');
       }
 
+      // 3. Calcula o valor total  
       const currentTotal = request.expenses.reduce(
         (sum, expense: any) => sum + Number(expense.value),
         0,
@@ -85,17 +99,6 @@ export class ExpenseService {
 
       if (newTotal > project.limit) {
         request.isOverLimit = true;
-      }
-
-      if (createExpenseDto.kilometerPerLiter && createExpenseDto.distance) {
-        const kmPerLiter = createExpenseDto.kilometerPerLiter;
-        const distance = createExpenseDto.distance;
-        const gasolinePrice = 6.28; // considera valor médio nacional do litro da gasolina como R$6,28
-
-        if (!isNaN(kmPerLiter) && !isNaN(distance) && kmPerLiter > 0) {
-          const fuelValue = (distance / kmPerLiter) * gasolinePrice;
-          createExpenseDto.value = parseFloat(fuelValue.toFixed(2));
-        }
       }
 
       const expense = new this.expenseModel({
@@ -197,66 +200,66 @@ export class ExpenseService {
   }
 
   async getDashboardStatsRaw(
-  startDate: string,
-  endDate: string,
-  granularity: 'week' | 'month' | 'quarter' | 'semester',) {
-  if (!startDate || !endDate) {
-    throw new BadRequestException('Data inicial e final são obrigatórias');
-  }
-
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  end.setHours(23, 59, 59, 999);
-
-  const expenses = await this.expenseModel
-    .find({ date: { $gte: start, $lte: end } })
-    .lean();
-
-  const grouped: Record<
-    string,
-    { totalValue: number; types: Record<string, number> }
-  > = {};
-
-  for (const expense of expenses) {
-    const date = dayjs(expense.date);
-
-    let key: string;
-
-    switch (granularity) {
-      case 'week':
-        key = date.startOf('week').format('YYYY-MM-DD');
-        break;
-      case 'month':
-        key = date.startOf('month').format('YYYY-MM');
-        break;
-      case 'quarter':
-        key = `${date.year()}-Q${Math.floor(date.month() / 3) + 1}`;
-        break;
-      case 'semester':
-        key = `${date.year()}-S${Math.floor(date.month() / 6) + 1}`;
-        break;
-      default:
-        throw new BadRequestException('Granularidade inválida');
+    startDate: string,
+    endDate: string,
+    granularity: 'week' | 'month' | 'quarter' | 'semester',) {
+    if (!startDate || !endDate) {
+      throw new BadRequestException('Data inicial e final são obrigatórias');
     }
 
-    if (!grouped[key]) {
-      grouped[key] = { totalValue: 0, types: {} };
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    const expenses = await this.expenseModel
+      .find({ date: { $gte: start, $lte: end } })
+      .lean();
+
+    const grouped: Record<
+      string,
+      { totalValue: number; types: Record<string, number> }
+    > = {};
+
+    for (const expense of expenses) {
+      const date = dayjs(expense.date);
+
+      let key: string;
+
+      switch (granularity) {
+        case 'week':
+          key = date.startOf('week').format('YYYY-MM-DD');
+          break;
+        case 'month':
+          key = date.startOf('month').format('YYYY-MM');
+          break;
+        case 'quarter':
+          key = `${date.year()}-Q${Math.floor(date.month() / 3) + 1}`;
+          break;
+        case 'semester':
+          key = `${date.year()}-S${Math.floor(date.month() / 6) + 1}`;
+          break;
+        default:
+          throw new BadRequestException('Granularidade inválida');
+      }
+
+      if (!grouped[key]) {
+        grouped[key] = { totalValue: 0, types: {} };
+      }
+
+      grouped[key].totalValue += expense.value;
+      grouped[key].types[expense.type] = (grouped[key].types[expense.type] || 0) + 1;
     }
 
-    grouped[key].totalValue += expense.value;
-    grouped[key].types[expense.type] = (grouped[key].types[expense.type] || 0) + 1;
+    const result = Object.entries(grouped).map(([period, data]) => ({
+      period,
+      totalValue: parseFloat(data.totalValue.toFixed(2)),
+      types: Object.entries(data.types).map(([type, count]) => ({ type, count })),
+    }));
+
+    result.sort((a, b) => a.period.localeCompare(b.period));
+
+    return result;
   }
-
-  const result = Object.entries(grouped).map(([period, data]) => ({
-    period,
-    totalValue: parseFloat(data.totalValue.toFixed(2)),
-    types: Object.entries(data.types).map(([type, count]) => ({ type, count })),
-  }));
-
-  result.sort((a, b) => a.period.localeCompare(b.period));
-
-  return result;
-}
 
   async updateExpense(id: string, updateExpense: UpdateExpenseDto) {
     try {
