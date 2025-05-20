@@ -94,7 +94,7 @@ export class ProjectsService {
 
   async findAll(queryFilters: ProjectFiltersDto) {
     try {
-      const { search, page = 1, limit = 10, ...filters } = queryFilters;
+      const { search, page = 1, limit = 15, ...filters } = queryFilters;
       const searchParams = parseSearch(search, ['title', 'code']);
       const skip = (page - 1) * limit;
 

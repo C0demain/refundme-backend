@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsOptional, IsString, IsNumber, Min } from "class-validator";
+import { Type } from "class-transformer";
+import { IsNotEmpty, IsOptional, IsString, IsNumber, Min, IsInt } from "class-validator";
 
 export class ProjectFiltersDto {
   @ApiProperty({ description: 'Filtro por centro de custo do projeto', required: false })
@@ -13,15 +14,17 @@ export class ProjectFiltersDto {
   @IsString()
   search?: string;
 
-  @ApiProperty({ required: false, default: 1 })
+  @ApiProperty({ required: false, description: 'Número da página', default: 1 })
   @IsOptional()
-  @IsNumber()
+  @Type(() => Number)
+  @IsInt()
   @Min(1)
   page?: number = 1;
 
-  @ApiProperty({ required: false, default: 15 })
+  @ApiProperty({ required: false, description: 'Quantidade de itens por página', default: 15 })
   @IsOptional()
-  @IsNumber()
+  @Type(() => Number)
+  @IsInt()
   @Min(1)
   limit?: number = 15;
 }
