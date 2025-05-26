@@ -6,6 +6,7 @@ import { Request, RequestSchema } from './request.schema';
 import { Project, ProjectSchema } from 'src/projects/project.schema';
 import { Expense, ExpenseSchema } from 'src/expense/expense.schema';
 import { User, userSchema } from 'src/user/user.schema';
+import { ExpenseService } from 'src/expense/expense.service';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import { User, userSchema } from 'src/user/user.schema';
     MongooseModule.forFeature([{ name: User.name, schema: userSchema}]),
   ],
   controllers: [RequestsController],
-  providers: [RequestsService],
+  providers: [RequestsService, ExpenseService],
 })
 export class RequestsModule {}

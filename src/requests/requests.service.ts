@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException, HttpStatus, Req } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateRequestDto } from './dto/create-request.dto';
@@ -9,6 +9,7 @@ import { RequestFiltersDto } from 'src/requests/dto/request-filters.dto';
 import parseSearch from 'src/utils/parseSearch';
 import { Expense } from 'src/expense/expense.schema';
 import { User } from 'src/user/user.schema';
+import { ExpenseService } from 'src/expense/expense.service';
 
 @Injectable()
 export class RequestsService {
@@ -16,7 +17,8 @@ export class RequestsService {
     @InjectModel(Request.name) private requestModel: Model<Request>,
     @InjectModel(Project.name) private projectModel: Model<Project>,
     @InjectModel(Expense.name) private expenseModel: Model<Expense>,
-    @InjectModel(User.name) private userModel: Model<User>
+    @InjectModel(User.name) private userModel: Model<User>,
+    private readonly expenseService: ExpenseService
   ) {}
 
   async create(createRequestDto: CreateRequestDto) {
@@ -70,13 +72,22 @@ export class RequestsService {
           .populate({ path: 'project', select: 'id title code limit' })
           .populate({ path: 'user', select: 'id name' })
           .sort({ date: -1 })
+          .lean()
           .exec(),
 
         this.requestModel.countDocuments({
           ...filters,
           ...searchParams,
-        }),
+        })
       ]);
+
+      for (const request of requests) {
+        for (const expense of request.expenses as any[]) {
+          if (expense.image) {
+            expense.image = await this.expenseService.getSignedImageUrl(expense.image);
+          }
+        }
+      }
 
       return {
         data: requests,
@@ -109,6 +120,12 @@ export class RequestsService {
         throw new NotFoundException(`Solicitação com id ${id} não encontrada`);
       }
 
+      for (const expense of request.expenses as any[]) {
+          if (expense.image) {
+            expense.image = await this.expenseService.getSignedImageUrl(expense.image);
+          }
+      }
+
       return {  
         ...request.toObject(),
         totalExpensesValue
@@ -120,9 +137,10 @@ export class RequestsService {
     }
   }
 
+
   async findRequestsByUserId(userId: string, queryFilters: RequestFiltersDto): Promise<Request[]> {
     try {
-      const { search, ...filters } = queryFilters;
+      const { search,limit, page, ...filters } = queryFilters;
       const searchParams = parseSearch(search, ['title', 'code']);
   
       const query: any = {
@@ -136,6 +154,14 @@ export class RequestsService {
         .populate({ path: 'project', select: 'id title code' })
         .populate({ path: 'user', select: 'id name' });
 
+      for (const request of requests) {
+        for (const expense of request.expenses as any[]) {
+          if (expense.image) {
+            expense.image = await this.expenseService.getSignedImageUrl(expense.image);
+          }
+        }
+      }
+
       return requests;
   
     } catch (error) {
@@ -143,6 +169,8 @@ export class RequestsService {
       throw new HttpException('Erro ao buscar solicitações do usuário', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+
 
   async update(id: string, projectRequestData: UpdateRequestDto) {
     try {
