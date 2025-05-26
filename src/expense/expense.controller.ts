@@ -9,8 +9,9 @@ import {
   UseInterceptors,
   UploadedFile,
   UseGuards,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiConsumes, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiConsumes, ApiParam, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ExpenseService } from './expense.service';
 import { CreateExpenseDto } from './dtos/createExpense.dto';
 import { UpdateExpenseDto } from './dtos/updateExpense.dto';
@@ -20,6 +21,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Roles } from 'src/auth/decorators/role.decorator';
 import { Role } from 'src/user/enums/role.enum';
 import { RolesGuard } from 'src/auth/guards/role.guard';
+import { ExpenseFiltersDto } from './dtos/expenseFilter.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('Expenses')
@@ -42,6 +44,8 @@ export class ExpenseController {
         date: { type: 'string', format: 'date-time', example: '2023-05-20T14:48:00.000Z' },
         description: { type: 'string', example: 'Lunch at a restaurant' },
         image: { type: 'string', format: 'binary' },
+        kilometerPerLiter: { type: 'number', example: 10 },
+        distance: { type: 'number', example: 100 }
       },
     },
   })
@@ -59,12 +63,30 @@ export class ExpenseController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Retrieve all expenses' })
+  @ApiOperation({ summary: 'Retrieve all expenses (optionally filtered by date)' })
   @ApiResponse({ status: 200, description: 'Expenses retrieved successfully' })
-  async findAll() {
+  async findAll(@Query() filters: ExpenseFiltersDto) {
+    const result = await this.expenseService.getExpenses(filters);
     return {
       message: 'Expenses retrieved successfully',
-      data: await this.expenseService.getExpenses(),
+      ...result,
+    };
+  }
+
+  @Get('dashboard-stats')
+  @ApiOperation({ summary: 'Dashboard grouped expenses by period and type (raw method)' })
+  @ApiQuery({ name: 'startDate', required: true, type: String })
+  @ApiQuery({ name: 'endDate', required: true, type: String })
+  @ApiQuery({ name: 'granularity', required: true, enum: ['week', 'month', 'quarter', 'semester'] })
+  @ApiResponse({ status: 200, description: 'Grouped dashboard data retrieved successfully' })
+  async getDashboardStats(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('granularity') granularity: 'week' | 'month' | 'quarter' | 'semester',) {
+    const data = await this.expenseService.getDashboardStatsRaw(startDate, endDate, granularity);
+    return {
+      message: 'Grouped dashboard data retrieved successfully',
+      data,
     };
   }
 

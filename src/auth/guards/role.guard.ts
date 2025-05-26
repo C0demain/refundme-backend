@@ -24,19 +24,13 @@ export class RolesGuard implements CanActivate {
 
         const request = context.switchToHttp().getRequest();
 
-        // Prioridade 1: role do user (caso tenha JWT)
         const userRole = request.user?.role;
 
-        // Prioridade 2: role vindo de um header (ex: client-type-role)
-        const headerRole = request.headers['client-role'];
-
-        const roleToCheck = userRole || headerRole;
-
-        if (!roleToCheck) {
+        if (!userRole) {
             throw new ForbiddenException('Cargo não identificado');
         }
 
-        if (!requiredRoles.includes(roleToCheck)) {
+        if (!requiredRoles.includes(userRole)) {
             throw new ForbiddenException('Acesso negado: cargo insuficiente');
         }
 

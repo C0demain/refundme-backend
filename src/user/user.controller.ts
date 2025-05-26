@@ -22,7 +22,6 @@ import { RolesGuard } from "src/auth/guards/role.guard";
 import { UserFiltersDto } from "src/user/dtos/user-filters.dto";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
 @ApiTags('Users')
 @ApiBearerAuth()
 @Controller('users')
@@ -30,6 +29,7 @@ export class UserController {
   constructor(private userService: UserService) { }
 
   @Post()
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({ status: 201, description: 'User created successfully' })
   @ApiBody({ type: CreateUserDto })
@@ -38,6 +38,7 @@ export class UserController {
   }
 
   @Get()
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Retrieve all users' })
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
   async getUsers(@Query() filters: UserFiltersDto) {
@@ -59,6 +60,7 @@ export class UserController {
 
 
   @Patch(':id')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update a user by ID' })
   @ApiParam({ name: 'id', required: true, description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
@@ -70,6 +72,7 @@ export class UserController {
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete a user by ID' })
   @ApiParam({ name: 'id', required: true, description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })

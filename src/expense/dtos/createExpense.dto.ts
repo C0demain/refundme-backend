@@ -45,4 +45,21 @@ export class CreateExpenseDto {
   @IsOptional()
   description?: string;
 
+  @ApiPropertyOptional({
+    example: 12,
+    description: 'My car consumes 1L per 10 km',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Transform(({ value }) => parseFloat(value))
+  kilometerPerLiter?: number;
+
+  @ApiPropertyOptional({
+    example: 100,
+    description: 'Distance traveled',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Transform(({ value }) => parseFloat(value))
+  distance?: number;
 }

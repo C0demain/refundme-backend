@@ -94,13 +94,28 @@ export class ProjectsService {
 
   async findAll(queryFilters: ProjectFiltersDto) {
     try {
-      const { search, ...filters } = queryFilters;
+      const { search, page = 1, limit = 15, ...filters } = queryFilters;
       const searchParams = parseSearch(search, ['title', 'code']);
+      const skip = (page - 1) * limit;
 
-      return await this.projectModel.find({
-        ...filters,
-        ...searchParams,
-      }).populate('requests').populate('users', 'name email');
+      const [projects, total] = await Promise.all([
+        this.projectModel.find({ ...filters, ...searchParams })
+          .populate('requests')
+          .populate('users', 'name email')
+          .skip(skip)
+          .limit(limit)
+          .exec(),
+
+        this.projectModel.countDocuments({ ...filters, ...searchParams }),
+      ]);
+
+      return {
+        data: projects,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.error('Erro ao buscar projetos:', error);
       throw new HttpException('Erro ao buscar projetos', HttpStatus.INTERNAL_SERVER_ERROR);

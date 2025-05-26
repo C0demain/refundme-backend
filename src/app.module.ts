@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ExpenseModule } from './expense/expense.module';
 import { RequestsModule } from './requests/requests.module';
 import { ProjectsModule } from './projects/projects.module';
+import { ChartModule } from './chart/chart.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ProjectsModule } from './projects/projects.module';
     ExpenseModule,
     ProjectsModule,
     RequestsModule,
+    ChartModule,
   ],
   controllers: [],
   providers: [],

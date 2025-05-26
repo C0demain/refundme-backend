@@ -20,6 +20,12 @@ export class Expense {
 
   @Prop({ type: Types.ObjectId, ref: 'Request' })
   request: Types.ObjectId;
+
+  @Prop()
+  kilometerPerLiter: number;
+
+  @Prop()
+  distance: number;
 }
 
 export const ExpenseSchema = SchemaFactory.createForClass(Expense);

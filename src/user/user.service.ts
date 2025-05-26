@@ -7,12 +7,14 @@ import { UpdateUserDto } from "./dtos/updateUser.dto";
 import { UserFiltersDto } from "src/user/dtos/user-filters.dto";
 import parseSearch from "src/utils/parseSearch";
 import { Request } from "src/requests/request.schema";
+import { Project } from "src/projects/project.schema";
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Request.name) private readonly requestModel: Model<Request>,
+    @InjectModel(Project.name) private readonly projectModel: Model<Project>
   ) {}
 
   async createUser(createUserDto: CreateUserDto) {
@@ -34,15 +36,38 @@ export class UserService {
   
   async getUsers(queryFilters: UserFiltersDto) {
     try {
-      const { search, ...filters } = queryFilters;
+      const { search, page = 1, limit = 15, ...filters } = queryFilters;
       const searchParams = parseSearch(search, ['name', 'email']);
+      const skip = (page - 1) * limit;
 
-      return await this.userModel.find({ ...filters, ...searchParams }).populate('requests').populate('projects').exec();
+      const [users, total] = await Promise.all([
+        this.userModel
+          .find({ ...filters, ...searchParams })
+          .skip(skip)
+          .limit(limit)
+          .populate('requests')
+          .populate({
+            path: 'projects',
+            select: '-requests -users',
+          })
+          .exec(),
+
+        this.userModel.countDocuments({ ...filters, ...searchParams }),
+      ]);
+
+      return {
+        data: users,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
       throw new HttpException('Erro ao buscar usuários', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
 
   async getUserById(id: string) {
     try {
@@ -93,18 +118,44 @@ export class UserService {
   }
 
   async deleteUser(id: string) {
+    const session = await this.userModel.db.startSession();
+    session.startTransaction();
+
     try {
-      const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
+      const deletedUser = await this.userModel.findByIdAndDelete(id).session(session);
 
       if (!deletedUser) {
         throw new NotFoundException(`Usuário com id ${id} não encontrado`);
       }
 
+      await this.projectModel.updateMany(
+        { users: id },
+        { $pull: { users: id } },
+        { session }
+      );
+
+      await this.requestModel.updateMany(
+        { user: id },
+        { $unset: { user: "" } }, //{ $set: { user: null } } pode ser null tambem se ficar melhor 
+        { session }
+      );
+
+      // se quiserem deletar as requests junto do usuario
+      // await this.requestModel.deleteMany({ user: id }, { session });
+
+      await session.commitTransaction();
+      session.endSession();
+
       return { message: `Usuário com id ${id} removido com sucesso` };
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+
       if (error instanceof NotFoundException) throw error;
+
       console.error('Erro ao deletar usuário:', error);
       throw new HttpException('Erro ao deletar usuário', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
 }
